@@ -1,6 +1,6 @@
 # DataFusion Performance Reports
 
-[![View Live Reports](https://img.shields.io/badge/View-Live%20Reports-blue)](https://YOUR_USERNAME.github.io/datafusion-performance-reports/)
+[![View Live Reports](https://img.shields.io/badge/View-Live%20Reports-blue)](https://MaduMitha-Ravi.github.io/datafusion-performance-reports/)
 [![Apache DataFusion](https://img.shields.io/badge/Apache-DataFusion-orange)](https://github.com/apache/datafusion)
 
 ## 📊 Overview
@@ -9,7 +9,7 @@ This repository hosts performance benchmark reports for Apache DataFusion, track
 
 ## 🌐 View Reports
 
-**Live Dashboard:** [https://YOUR_USERNAME.github.io/datafusion-performance-reports/](https://YOUR_USERNAME.github.io/datafusion-performance-reports/)
+**Live Dashboard:** [https://MaduMitha-Ravi.github.io/datafusion-performance-reports/](https://MaduMitha-Ravi.github.io/datafusion-performance-reports/)
 
 ## 📈 Metrics Tracked
 
