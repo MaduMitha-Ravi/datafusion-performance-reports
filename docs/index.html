@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataFusion Benchmark Report</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css">
+    <style>
+        :root {
+            --primary-color: #3273dc;
+            --success-color: #23d160;
+            --info-color: #3298dc;
+            --warning-color: #ffdd57;
+            --danger-color: #ff3860;
+            --dark-color: #363636;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 14px;
+        }
+        
+        .hero {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            margin: 1rem auto;
+            padding: 1.5rem;
+            max-width: 1400px;
+        }
+        
+        .box {
+            padding: 1rem !important;
+        }
+        
+        .mb-6 {
+            margin-bottom: 1.5rem !important;
+        }
+        
+        .mb-4 {
+            margin-bottom: 1rem !important;
+        }
+        
+        .mb-3 {
+            margin-bottom: 0.75rem !important;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, var(--card-color, #667eea), rgba(255, 255, 255, 0.2));
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            color: white;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .stat-card .title.is-2 {
+            font-size: 1.75rem !important;
+        }
+        
+        .stat-card .subtitle {
+            font-size: 0.85rem !important;
+        }
+        
+        .stat-card .icon.is-large i {
+            font-size: 2.5rem !important;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .stat-card.primary { --card-color: #3273dc; }
+        .stat-card.success { --card-color: #23d160; }
+        .stat-card.warning { --card-color: #ffdd57; color: #333; }
+        .stat-card.info { --card-color: #3298dc; }
+        
+        .performance-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            border: none;
+        }
+        
+        .table {
+            font-size: 0.85rem !important;
+        }
+        
+        .title.is-4 {
+            font-size: 1.25rem !important;
+        }
+        
+        .title.is-5 {
+            font-size: 1.1rem !important;
+        }
+        
+        .notification {
+            font-size: 0.9rem !important;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            text-align: left;
+            position: relative;
+            height: 600px;
+        }
+        
+        .chart-container canvas {
+            margin: 0;
+            display: block;
+            max-height: 500px !important;
+        }
+        
+        .highlight-success {
+            background-color: #23d160 !important;
+            color: white !important;
+            font-weight: bold;
+        }
+        
+        .github-badge {
+            background: linear-gradient(135deg, #24292e, #404448);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            transition: transform 0.2s;
+        }
+        
+        .github-badge:hover {
+            transform: scale(1.05);
+            color: white;
+        }
+        
+        .generated-info {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <div class="hero-body">
+            <div class="container">
+                <div class="level">
+                    <div class="level-left">
+                        <div class="level-item">
+                            <h1 class="title is-4 has-text-white">
+                                <span class="icon">
+                                    <i class="mdi mdi-chart-line mdi-24px"></i>
+                                </span>
+                                DataFusion Benchmark Report
+                            </h1>
+                        </div>
+                    </div>
+                    <div class="level-right">
+                        <div class="level-item">
+                            <a href="https://github.com/apache/datafusion" class="github-badge" target="_blank">
+                                <i class="mdi mdi-github"></i>
+                                <span>View on GitHub</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="main-container">
+        
+        <div class="notification is-info is-light mb-4">
+            <div class="content">
+                <p>
+                    <span class="icon"><i class="mdi mdi-information"></i></span>
+                    <strong>Static Report:</strong> This is a self-contained HTML report with all benchmark data embedded. 
+                    You can host this file on GitHub Pages or any static hosting service.
+                    The latest commit is highlighted with a <span class="tag is-info is-light"><span class="icon"><i class="mdi mdi-star"></i></span><span>Latest</span></span> badge.
+                </p>
+            </div>
+        </div>
+
+        
+        <div class="notification is-light mb-4">
+            <p class="has-text-grey-dark">
+                <strong>Performance Overview:</strong> Key metrics from your DataFusion benchmark runs. 
+                These cards show the total number of commits tested, unique queries benchmarked, average execution time across all queries, and when the data was last updated.
+            </p>
+        </div>
+        
+        <div class="columns is-multiline mb-6">
+            <div class="column is-3">
+                <div class="stat-card primary">
+                    <span class="icon is-large mb-3">
+                        <i class="mdi mdi-source-branch mdi-48px"></i>
+                    </span>
+                    <h2 class="title is-2 has-text-white">10</h2>
+                    <p class="subtitle is-6 has-text-white-bis">Total Commits</p>
+                </div>
+            </div>
+            <div class="column is-3">
+                <div class="stat-card success">
+                    <span class="icon is-large mb-3">
+                        <i class="mdi mdi-magnify mdi-48px"></i>
+                    </span>
+                    <h2 class="title is-2 has-text-white">10</h2>
+                    <p class="subtitle is-6 has-text-white-bis">Benchmark Queries</p>
+                </div>
+            </div>
+            <div class="column is-3">
+                <div class="stat-card warning">
+                    <span class="icon is-large mb-3">
+                        <i class="mdi mdi-clock-outline mdi-48px"></i>
+                    </span>
+                    <h2 class="title is-2 has-text-dark">35.93ms</h2>
+                    <p class="subtitle is-6 has-text-dark">Avg Query Time</p>
+                </div>
+            </div>
+            <div class="column is-3">
+                <div class="stat-card info">
+                    <span class="icon is-large mb-3">
+                        <i class="mdi mdi-calendar-clock mdi-48px"></i>
+                    </span>
+                    <h3 class="title is-5 has-text-white">2025-08-11 17:35</h3>
+                    <p class="subtitle is-6 has-text-white-bis">Last Updated</p>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="notification is-light mb-4">
+            <p class="has-text-grey-dark">
+                <strong>Latency Trends:</strong> Visual comparison of query performance across different commits. 
+                Each color represents a different query, and the red line shows the total latency for all queries combined. 
+                Lower values indicate better performance. Hover over the charts to see exact values.
+            </p>
+        </div>
+        
+        <div class="box chart-container mb-6">
+            <h4 class="title is-4 mb-4">
+                <span class="icon mr-2">
+                    <i class="mdi mdi-chart-bar"></i>
+                </span>
+                Average Latency by Query and Commit
+            </h4>
+            <div style="position: relative; height: 500px;">
+                <canvas id="avgLatencyChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="box chart-container mb-6">
+            <h4 class="title is-4 mb-4">
+                <span class="icon mr-2">
+                    <i class="mdi mdi-chart-bar"></i>
+                </span>
+                P95 Latency by Query and Commit
+            </h4>
+            <div style="position: relative; height: 500px;">
+                <canvas id="p95LatencyChart"></canvas>
+            </div>
+        </div>
+
+        
+        <div class="notification is-light mb-4">
+            <p class="has-text-grey-dark">
+                <strong>Query Comparison:</strong> Side-by-side comparison of each query's performance between the latest and previous commits. 
+                The "Change" column shows percentage improvement (green, negative values) or regression (red, positive values). 
+                Status indicators help quickly identify which queries have gotten faster, slower, or remained stable.
+            </p>
+        </div>
+        
+        <div class="box performance-card mb-6">
+            <h4 class="title is-4 mb-4">
+                <span class="icon mr-2">
+                    <i class="mdi mdi-magnify"></i>
+                </span>
+                Query Performance Overview
+            </h4>
+            <div class="table-container">
+                <table class="table is-fullwidth is-hoverable">
+                    <thead>
+                        <tr>
+                            <th>Query</th>
+                            <th class="has-text-centered">Previous Commit</th>
+                            <th class="has-text-centered">Latest Commit</th>
+                            <th class="has-text-centered">Change</th>
+                            <th class="has-text-centered">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                        <tr>
+                            <td>
+                                <strong>Simple Filter</strong><br>
+                                <small class="has-text-grey">q1_simple_filter</small>
+                            </td>
+                            <td class="has-text-centered">36.79ms</td>
+                            <td class="has-text-centered">
+                                <strong>36.57ms</strong>
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="has-text-success">-0.59%</span>
+                                
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="tag is-light">Stable</span>
+                                
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong>Group By Aggregations</strong><br>
+                                <small class="has-text-grey">q2_group_aggregations</small>
+                            </td>
+                            <td class="has-text-centered">36.40ms</td>
+                            <td class="has-text-centered">
+                                <strong>36.34ms</strong>
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="has-text-success">-0.17%</span>
+                                
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="tag is-light">Stable</span>
+                                
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong>Time Window Aggregation</strong><br>
+                                <small class="has-text-grey">q3_time_window</small>
+                            </td>
+                            <td class="has-text-centered">37.09ms</td>
+                            <td class="has-text-centered">
+                                <strong>37.06ms</strong>
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="has-text-success">-0.07%</span>
+                                
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="tag is-light">Stable</span>
+                                
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong>Complex Multi-condition Filter</strong><br>
+                                <small class="has-text-grey">q4_complex_filter</small>
+                            </td>
+                            <td class="has-text-centered">37.06ms</td>
+                            <td class="has-text-centered">
+                                <strong>37.10ms</strong>
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="has-text-danger">+0.09%</span>
+                                
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="tag is-light">Stable</span>
+                                
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong>Percentile Calculations</strong><br>
+                                <small class="has-text-grey">q5_percentiles</small>
+                            </td>
+                            <td class="has-text-centered">36.99ms</td>
+                            <td class="has-text-centered">
+                                <strong>36.86ms</strong>
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="has-text-success">-0.34%</span>
+                                
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="tag is-light">Stable</span>
+                                
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong>Distinct Operations</strong><br>
+                                <small class="has-text-grey">q6_distinct_count</small>
+                            </td>
+                            <td class="has-text-centered">37.02ms</td>
+                            <td class="has-text-centered">
+                                <strong>36.80ms</strong>
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="has-text-success">-0.60%</span>
+                                
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="tag is-light">Stable</span>
+                                
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong>Top-N with Sorting</strong><br>
+                                <small class="has-text-grey">q7_top_n_sorting</small>
+                            </td>
+                            <td class="has-text-centered">36.96ms</td>
+                            <td class="has-text-centered">
+                                <strong>32.89ms</strong>
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="has-text-success">-11.02%</span>
+                                
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="tag is-success">Improved</span>
+                                
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong>Self Join</strong><br>
+                                <small class="has-text-grey">q8_self_join</small>
+                            </td>
+                            <td class="has-text-centered">37.30ms</td>
+                            <td class="has-text-centered">
+                                <strong>32.47ms</strong>
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="has-text-success">-12.95%</span>
+                                
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="tag is-success">Improved</span>
+                                
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong>Window Functions</strong><br>
+                                <small class="has-text-grey">q9_window_functions</small>
+                            </td>
+                            <td class="has-text-centered">37.38ms</td>
+                            <td class="has-text-centered">
+                                <strong>32.06ms</strong>
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="has-text-success">-14.24%</span>
+                                
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="tag is-success">Improved</span>
+                                
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong>Subquery with Aggregation</strong><br>
+                                <small class="has-text-grey">q10_subquery</small>
+                            </td>
+                            <td class="has-text-centered">37.82ms</td>
+                            <td class="has-text-centered">
+                                <strong>31.98ms</strong>
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="has-text-success">-15.45%</span>
+                                
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="tag is-success">Improved</span>
+                                
+                            </td>
+                        </tr>
+                        
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        
+        <div class="notification is-light mb-4">
+            <p class="has-text-grey-dark">
+                <strong>Detailed Metrics:</strong> Comprehensive performance statistics for individual queries across all commits. 
+                Use the dropdown to select a specific query. Green highlighting indicates the best-performing commit for average and P95 latency. 
+                The latest commit is marked with a star icon. All percentiles help understand query performance distribution.
+            </p>
+        </div>
+        
+        <div class="box performance-card mb-6">
+            <h4 class="title is-4 mb-3">
+                <span class="icon mr-2">
+                    <i class="mdi mdi-table"></i>
+                </span>
+                Detailed Performance Metrics
+            </h4>
+            <div class="field mb-4">
+                <label class="label is-small">Select Query:</label>
+                <div class="control">
+                    <div class="select is-primary">
+                        <select id="querySelect">
+                            
+                            <option value="q8_self_join" selected>
+                                Self Join
+                            </option>
+                            
+                            <option value="q2_group_aggregations" >
+                                Group By Aggregations
+                            </option>
+                            
+                            <option value="q4_complex_filter" >
+                                Complex Multi-condition Filter
+                            </option>
+                            
+                            <option value="q6_distinct_count" >
+                                Distinct Operations
+                            </option>
+                            
+                            <option value="q7_top_n_sorting" >
+                                Top-N with Sorting
+                            </option>
+                            
+                            <option value="q9_window_functions" >
+                                Window Functions
+                            </option>
+                            
+                            <option value="q10_subquery" >
+                                Subquery with Aggregation
+                            </option>
+                            
+                            <option value="q1_simple_filter" >
+                                Simple Filter
+                            </option>
+                            
+                            <option value="q3_time_window" >
+                                Time Window Aggregation
+                            </option>
+                            
+                            <option value="q5_percentiles" >
+                                Percentile Calculations
+                            </option>
+                            
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="table is-bordered is-hoverable is-narrow" id="metricsTable">
+                    <thead>
+                        <tr>
+                            <th>Commit</th>
+                            <th class="has-text-centered">Avg</th>
+                            <th class="has-text-centered">Min</th>
+                            <th class="has-text-centered">Max</th>
+                            <th class="has-text-centered">Median</th>
+                            <th class="has-text-centered">P70</th>
+                            <th class="has-text-centered">P80</th>
+                            <th class="has-text-centered">P90</th>
+                            <th class="has-text-centered">P95</th>
+                        </tr>
+                    </thead>
+                    <tbody id="metricsTableBody">
+                        
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        
+        <div class="notification is-light mb-4">
+            <p class="has-text-grey-dark">
+                <strong>Commit History:</strong> Chronological list of all tested commits with their overall performance status. 
+                The latest commit is highlighted in blue. Status indicators show whether each commit improved, regressed, or maintained stable performance 
+                compared to its predecessor. Average performance shows the mean latency across all queries for that commit.
+            </p>
+        </div>
+        
+        <div class="box performance-card mb-6">
+            <h4 class="title is-4 mb-4">
+                <span class="icon mr-2">
+                    <i class="mdi mdi-source-branch"></i>
+                </span>
+                Recent Commits
+            </h4>
+            <div class="table-container">
+                <table class="table is-fullwidth is-hoverable">
+                    <thead>
+                        <tr>
+                            <th>Commit Hash</th>
+                            <th>Timestamp</th>
+                            <th class="has-text-centered">Avg Performance</th>
+                            <th class="has-text-centered">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                        <tr class="has-background-info-light">
+                            <td>
+                                <code class="has-text-primary">7d521451</code>
+                                
+                                <span class="tag is-info is-light ml-2">
+                                    <span class="icon"><i class="mdi mdi-star"></i></span>
+                                    <span>Latest</span>
+                                </span>
+                                
+                            </td>
+                            <td>
+                                <span class="has-text-grey-dark">2025-08-11 17:35:48</span>
+                            </td>
+                            <td class="has-text-centered">
+                                <strong>35.01</strong> ms
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="tag is-success">
+                                        <span class="icon"><i class="mdi mdi-arrow-down"></i></span>
+                                        <span>Improved</span>
+                                    </span>
+                                
+                            </td>
+                        </tr>
+                        
+                        <tr >
+                            <td>
+                                <code class="has-text-primary">a1431e23</code>
+                                
+                            </td>
+                            <td>
+                                <span class="has-text-grey-dark">2025-08-11 13:08:21</span>
+                            </td>
+                            <td class="has-text-centered">
+                                <strong>37.08</strong> ms
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="tag is-success">
+                                        <span class="icon"><i class="mdi mdi-arrow-down"></i></span>
+                                        <span>Improved</span>
+                                    </span>
+                                
+                            </td>
+                        </tr>
+                        
+                        <tr >
+                            <td>
+                                <code class="has-text-primary">80d10584</code>
+                                
+                            </td>
+                            <td>
+                                <span class="has-text-grey-dark">2025-08-11 13:08:03</span>
+                            </td>
+                            <td class="has-text-centered">
+                                <strong>40.97</strong> ms
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="tag is-danger">
+                                        <span class="icon"><i class="mdi mdi-arrow-up"></i></span>
+                                        <span>Regressed</span>
+                                    </span>
+                                
+                            </td>
+                        </tr>
+                        
+                        <tr >
+                            <td>
+                                <code class="has-text-primary">8494a396</code>
+                                
+                            </td>
+                            <td>
+                                <span class="has-text-grey-dark">2025-08-11 21:31:25</span>
+                            </td>
+                            <td class="has-text-centered">
+                                <strong>32.62</strong> ms
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="tag is-success">
+                                        <span class="icon"><i class="mdi mdi-arrow-down"></i></span>
+                                        <span>Improved</span>
+                                    </span>
+                                
+                            </td>
+                        </tr>
+                        
+                        <tr >
+                            <td>
+                                <code class="has-text-primary">28e042dd</code>
+                                
+                            </td>
+                            <td>
+                                <span class="has-text-grey-dark">2025-08-12 03:21:36</span>
+                            </td>
+                            <td class="has-text-centered">
+                                <strong>37.89</strong> ms
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="tag is-light">
+                                        <span class="icon"><i class="mdi mdi-minus"></i></span>
+                                        <span>Stable</span>
+                                    </span>
+                                
+                            </td>
+                        </tr>
+                        
+                        <tr >
+                            <td>
+                                <code class="has-text-primary">ceab1e16</code>
+                                
+                            </td>
+                            <td>
+                                <span class="has-text-grey-dark">2025-08-11 20:20:07</span>
+                            </td>
+                            <td class="has-text-centered">
+                                <strong>36.51</strong> ms
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="tag is-danger">
+                                        <span class="icon"><i class="mdi mdi-arrow-up"></i></span>
+                                        <span>Regressed</span>
+                                    </span>
+                                
+                            </td>
+                        </tr>
+                        
+                        <tr >
+                            <td>
+                                <code class="has-text-primary">c5cb6f4a</code>
+                                
+                            </td>
+                            <td>
+                                <span class="has-text-grey-dark">2025-08-12 03:15:20</span>
+                            </td>
+                            <td class="has-text-centered">
+                                <strong>34.33</strong> ms
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="tag is-light">
+                                        <span class="icon"><i class="mdi mdi-minus"></i></span>
+                                        <span>Stable</span>
+                                    </span>
+                                
+                            </td>
+                        </tr>
+                        
+                        <tr >
+                            <td>
+                                <code class="has-text-primary">f0e93348</code>
+                                
+                            </td>
+                            <td>
+                                <span class="has-text-grey-dark">2025-08-12 03:07:41</span>
+                            </td>
+                            <td class="has-text-centered">
+                                <strong>35.25</strong> ms
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="tag is-light">
+                                        <span class="icon"><i class="mdi mdi-minus"></i></span>
+                                        <span>Stable</span>
+                                    </span>
+                                
+                            </td>
+                        </tr>
+                        
+                        <tr >
+                            <td>
+                                <code class="has-text-primary">d375bfed</code>
+                                
+                            </td>
+                            <td>
+                                <span class="has-text-grey-dark">2025-08-11 11:52:07</span>
+                            </td>
+                            <td class="has-text-centered">
+                                <strong>35.69</strong> ms
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="tag is-danger">
+                                        <span class="icon"><i class="mdi mdi-arrow-up"></i></span>
+                                        <span>Regressed</span>
+                                    </span>
+                                
+                            </td>
+                        </tr>
+                        
+                        <tr >
+                            <td>
+                                <code class="has-text-primary">ff77b702</code>
+                                
+                            </td>
+                            <td>
+                                <span class="has-text-grey-dark">2025-08-11 12:58:20</span>
+                            </td>
+                            <td class="has-text-centered">
+                                <strong>33.92</strong> ms
+                            </td>
+                            <td class="has-text-centered">
+                                
+                                    <span class="tag is-light">
+                                        <span class="icon"><i class="mdi mdi-minus"></i></span>
+                                        <span>Stable</span>
+                                    </span>
+                                
+                            </td>
+                        </tr>
+                        
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="generated-info">
+            <p>
+                <i class="mdi mdi-information-outline"></i>
+                Generated on 2025-08-11 17:35 | 
+                10 commits analyzed | 
+                10 queries benchmarked |
+                1,000,000 rows dataset |
+                1,000 iterations per query
+            </p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <script>
+        
+        const metricsByQuery = [{"QueryID":"q8_self_join","QueryName":"Self Join","Metrics":[{"CommitHash":"7d5214512740b4dfb742b6b3d91ed9affcc2c9d0","CommitTimestamp":"2025-08-11T17:35:48-04:00","Metric":{"query_id":"q8_self_join","query_name":"Self Join","commit_hash":"7d5214512740b4dfb742b6b3d91ed9affcc2c9d0","run_count":1000,"min_ms":30.304625,"max_ms":43.763334,"avg_ms":32.471881461,"median_ms":31.774542,"p70_ms":32.556542,"p80_ms":33.676541,"p90_ms":35.318709,"p95_ms":36.675459,"std_dev_ms":1.8834846677819306},"IsLowestAvg":true,"IsLowestP95":true,"IsLatest":true},{"CommitHash":"a1431e2371ee025940d8c9971007c7727aa57e34","CommitTimestamp":"2025-08-11T13:08:21-07:00","Metric":{"query_id":"q8_self_join","query_name":"Self Join","commit_hash":"a1431e2371ee025940d8c9971007c7727aa57e34","run_count":1000,"min_ms":35.126125,"max_ms":42.397,"avg_ms":37.300422166999994,"median_ms":37.11175,"p70_ms":37.654583,"p80_ms":38.037625,"p90_ms":38.68375,"p95_ms":39.171542,"std_dev_ms":0.990738691629469},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"80d105840da033f81341f95ceda367bf1cc62828","CommitTimestamp":"2025-08-11T13:08:03-07:00","Metric":{"query_id":"q8_self_join","query_name":"Self Join","commit_hash":"80d105840da033f81341f95ceda367bf1cc62828","run_count":1000,"min_ms":36.529375,"max_ms":124.366209,"avg_ms":39.79982987399999,"median_ms":39.444167,"p70_ms":39.904125,"p80_ms":40.204708,"p90_ms":40.650375,"p95_ms":41.319917,"std_dev_ms":3.4316639225352223},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"8494a3967a413ef263a50b87ce8b5924eb1aa948","CommitTimestamp":"2025-08-11T21:31:25+02:00","Metric":{"query_id":"q8_self_join","query_name":"Self Join","commit_hash":"8494a3967a413ef263a50b87ce8b5924eb1aa948","run_count":1000,"min_ms":30.871,"max_ms":40.538916,"avg_ms":33.116987547,"median_ms":32.546333,"p70_ms":33.327375,"p80_ms":34.01,"p90_ms":35.865375,"p95_ms":37.167833,"std_dev_ms":1.7934194023867827},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"28e042dd47610f65b37fcbd53390aef423f1a517","CommitTimestamp":"2025-08-12T03:21:36+08:00","Metric":{"query_id":"q8_self_join","query_name":"Self Join","commit_hash":"28e042dd47610f65b37fcbd53390aef423f1a517","run_count":1000,"min_ms":36.239875,"max_ms":51.875834,"avg_ms":38.68344733500002,"median_ms":38.416292,"p70_ms":39.142667,"p80_ms":39.594417,"p90_ms":40.311167,"p95_ms":40.910375,"std_dev_ms":1.3099674521921967},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"ceab1e1653f5c1f0208f35a07322cf5c70e47a87","CommitTimestamp":"2025-08-11T20:20:07+01:00","Metric":{"query_id":"q8_self_join","query_name":"Self Join","commit_hash":"ceab1e1653f5c1f0208f35a07322cf5c70e47a87","run_count":1000,"min_ms":35.913583,"max_ms":42.253958,"avg_ms":38.333349870999996,"median_ms":38.148917,"p70_ms":38.688375,"p80_ms":39.070708,"p90_ms":39.761458,"p95_ms":40.2885,"std_dev_ms":1.006179164105882},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"c5cb6f4ad751feb855b01a864ad62b7df670b11f","CommitTimestamp":"2025-08-12T03:15:20+08:00","Metric":{"query_id":"q8_self_join","query_name":"Self Join","commit_hash":"c5cb6f4ad751feb855b01a864ad62b7df670b11f","run_count":1000,"min_ms":30.861042,"max_ms":45.195625,"avg_ms":35.31196635500005,"median_ms":34.936417,"p70_ms":36.377958,"p80_ms":37.112791,"p90_ms":38.164083,"p95_ms":38.749208,"std_dev_ms":2.059959174710822},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"f0e933484812cb3abc618f6c15736cb7d4840bbe","CommitTimestamp":"2025-08-12T03:07:41+08:00","Metric":{"query_id":"q8_self_join","query_name":"Self Join","commit_hash":"f0e933484812cb3abc618f6c15736cb7d4840bbe","run_count":1000,"min_ms":33.635666,"max_ms":44.296584,"avg_ms":35.23219741699999,"median_ms":34.9315,"p70_ms":35.30975,"p80_ms":35.639541,"p90_ms":36.600375,"p95_ms":37.801417,"std_dev_ms":1.190715764759421},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"d375bfed45591f71bcb273f7d168ecd61a6bbf32","CommitTimestamp":"2025-08-11T11:52:07-07:00","Metric":{"query_id":"q8_self_join","query_name":"Self Join","commit_hash":"d375bfed45591f71bcb273f7d168ecd61a6bbf32","run_count":1000,"min_ms":33.8495,"max_ms":47.712083,"avg_ms":35.83808275099999,"median_ms":35.229334,"p70_ms":35.891,"p80_ms":36.640334,"p90_ms":38.307875,"p95_ms":39.633,"std_dev_ms":1.6524218468385894},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"ff77b702003b5bf6d9eaa759d37c4af3aefd9f4d","CommitTimestamp":"2025-08-11T12:58:20-05:00","Metric":{"query_id":"q8_self_join","query_name":"Self Join","commit_hash":"ff77b702003b5bf6d9eaa759d37c4af3aefd9f4d","run_count":1000,"min_ms":33.742,"max_ms":46.461917,"avg_ms":37.178620084000016,"median_ms":36.845709,"p70_ms":38.001708,"p80_ms":38.955375,"p90_ms":39.981041,"p95_ms":40.624875,"std_dev_ms":1.9436305629560051},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false}]},{"QueryID":"q2_group_aggregations","QueryName":"Group By Aggregations","Metrics":[{"CommitHash":"7d5214512740b4dfb742b6b3d91ed9affcc2c9d0","CommitTimestamp":"2025-08-11T17:35:48-04:00","Metric":{"query_id":"q2_group_aggregations","query_name":"Group By Aggregations","commit_hash":"7d5214512740b4dfb742b6b3d91ed9affcc2c9d0","run_count":1000,"min_ms":34.243541,"max_ms":39.763458,"avg_ms":36.34099595699995,"median_ms":36.221459,"p70_ms":36.67825,"p80_ms":37.072792,"p90_ms":37.706792,"p95_ms":38.121125,"std_dev_ms":0.9478239482124793},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":true},{"CommitHash":"a1431e2371ee025940d8c9971007c7727aa57e34","CommitTimestamp":"2025-08-11T13:08:21-07:00","Metric":{"query_id":"q2_group_aggregations","query_name":"Group By Aggregations","commit_hash":"a1431e2371ee025940d8c9971007c7727aa57e34","run_count":1000,"min_ms":33.805458,"max_ms":39.974458,"avg_ms":36.403307934,"median_ms":36.249542,"p70_ms":36.779,"p80_ms":37.187167,"p90_ms":37.757917,"p95_ms":38.114667,"std_dev_ms":0.9353167100324883},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"80d105840da033f81341f95ceda367bf1cc62828","CommitTimestamp":"2025-08-11T13:08:03-07:00","Metric":{"query_id":"q2_group_aggregations","query_name":"Group By Aggregations","commit_hash":"80d105840da033f81341f95ceda367bf1cc62828","run_count":1000,"min_ms":29.970083,"max_ms":131.790209,"avg_ms":39.95043524199993,"median_ms":35.6765,"p70_ms":45.875,"p80_ms":49.105917,"p90_ms":53.396375,"p95_ms":59.196166,"std_dev_ms":10.48232599277283},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"8494a3967a413ef263a50b87ce8b5924eb1aa948","CommitTimestamp":"2025-08-11T21:31:25+02:00","Metric":{"query_id":"q2_group_aggregations","query_name":"Group By Aggregations","commit_hash":"8494a3967a413ef263a50b87ce8b5924eb1aa948","run_count":1000,"min_ms":29.822458,"max_ms":43.117792,"avg_ms":31.69578438600002,"median_ms":31.163333,"p70_ms":31.785333,"p80_ms":32.385,"p90_ms":33.846542,"p95_ms":35.1475,"std_dev_ms":1.5648719195926468},"IsLowestAvg":true,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"28e042dd47610f65b37fcbd53390aef423f1a517","CommitTimestamp":"2025-08-12T03:21:36+08:00","Metric":{"query_id":"q2_group_aggregations","query_name":"Group By Aggregations","commit_hash":"28e042dd47610f65b37fcbd53390aef423f1a517","run_count":1000,"min_ms":34.496375,"max_ms":41.285333,"avg_ms":37.04281096900004,"median_ms":36.888542,"p70_ms":37.430625,"p80_ms":37.8495,"p90_ms":38.535042,"p95_ms":38.930833,"std_dev_ms":0.9841604864124894},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"ceab1e1653f5c1f0208f35a07322cf5c70e47a87","CommitTimestamp":"2025-08-11T20:20:07+01:00","Metric":{"query_id":"q2_group_aggregations","query_name":"Group By Aggregations","commit_hash":"ceab1e1653f5c1f0208f35a07322cf5c70e47a87","run_count":1000,"min_ms":30.142,"max_ms":39.731584,"avg_ms":32.14041017199998,"median_ms":31.8465,"p70_ms":32.353375,"p80_ms":32.715667,"p90_ms":33.425708,"p95_ms":34.538375,"std_dev_ms":1.2605549345370555},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"c5cb6f4ad751feb855b01a864ad62b7df670b11f","CommitTimestamp":"2025-08-12T03:15:20+08:00","Metric":{"query_id":"q2_group_aggregations","query_name":"Group By Aggregations","commit_hash":"c5cb6f4ad751feb855b01a864ad62b7df670b11f","run_count":1000,"min_ms":31.655792,"max_ms":41.209959,"avg_ms":34.45250203900001,"median_ms":33.718167,"p70_ms":35.722458,"p80_ms":36.433291,"p90_ms":37.368792,"p95_ms":37.89625,"std_dev_ms":1.965852627911193},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"f0e933484812cb3abc618f6c15736cb7d4840bbe","CommitTimestamp":"2025-08-12T03:07:41+08:00","Metric":{"query_id":"q2_group_aggregations","query_name":"Group By Aggregations","commit_hash":"f0e933484812cb3abc618f6c15736cb7d4840bbe","run_count":1000,"min_ms":32.592875,"max_ms":42.840375,"avg_ms":34.61446223900003,"median_ms":34.01625,"p70_ms":34.686167,"p80_ms":35.535125,"p90_ms":37.143,"p95_ms":38.25925,"std_dev_ms":1.6315979561790188},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"d375bfed45591f71bcb273f7d168ecd61a6bbf32","CommitTimestamp":"2025-08-11T11:52:07-07:00","Metric":{"query_id":"q2_group_aggregations","query_name":"Group By Aggregations","commit_hash":"d375bfed45591f71bcb273f7d168ecd61a6bbf32","run_count":1000,"min_ms":32.848125,"max_ms":49.73525,"avg_ms":35.080420459999985,"median_ms":34.552625,"p70_ms":35.319583,"p80_ms":36.031,"p90_ms":37.335,"p95_ms":38.708417,"std_dev_ms":1.6665461080771018},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"ff77b702003b5bf6d9eaa759d37c4af3aefd9f4d","CommitTimestamp":"2025-08-11T12:58:20-05:00","Metric":{"query_id":"q2_group_aggregations","query_name":"Group By Aggregations","commit_hash":"ff77b702003b5bf6d9eaa759d37c4af3aefd9f4d","run_count":1000,"min_ms":30.224834,"max_ms":39.882625,"avg_ms":31.97744962299993,"median_ms":31.89425,"p70_ms":32.271333,"p80_ms":32.484959,"p90_ms":32.839708,"p95_ms":33.225167,"std_dev_ms":0.9489097283198905},"IsLowestAvg":false,"IsLowestP95":true,"IsLatest":false}]},{"QueryID":"q4_complex_filter","QueryName":"Complex Multi-condition Filter","Metrics":[{"CommitHash":"7d5214512740b4dfb742b6b3d91ed9affcc2c9d0","CommitTimestamp":"2025-08-11T17:35:48-04:00","Metric":{"query_id":"q4_complex_filter","query_name":"Complex Multi-condition Filter","commit_hash":"7d5214512740b4dfb742b6b3d91ed9affcc2c9d0","run_count":1000,"min_ms":35.097292,"max_ms":42.038792,"avg_ms":37.09583439699996,"median_ms":36.926875,"p70_ms":37.489959,"p80_ms":37.845375,"p90_ms":38.420375,"p95_ms":38.953333,"std_dev_ms":0.9872183591558263},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":true},{"CommitHash":"a1431e2371ee025940d8c9971007c7727aa57e34","CommitTimestamp":"2025-08-11T13:08:21-07:00","Metric":{"query_id":"q4_complex_filter","query_name":"Complex Multi-condition Filter","commit_hash":"a1431e2371ee025940d8c9971007c7727aa57e34","run_count":1000,"min_ms":34.09225,"max_ms":40.300583,"avg_ms":37.06294365499998,"median_ms":36.939958,"p70_ms":37.488709,"p80_ms":37.756709,"p90_ms":38.418834,"p95_ms":38.801292,"std_dev_ms":0.9523500026219521},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"80d105840da033f81341f95ceda367bf1cc62828","CommitTimestamp":"2025-08-11T13:08:03-07:00","Metric":{"query_id":"q4_complex_filter","query_name":"Complex Multi-condition Filter","commit_hash":"80d105840da033f81341f95ceda367bf1cc62828","run_count":1000,"min_ms":36.183333,"max_ms":199.285708,"avg_ms":51.71657315300002,"median_ms":50.983416,"p70_ms":54.457583,"p80_ms":56.830625,"p90_ms":60.256416,"p95_ms":64.269709,"std_dev_ms":11.080159785933606},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"8494a3967a413ef263a50b87ce8b5924eb1aa948","CommitTimestamp":"2025-08-11T21:31:25+02:00","Metric":{"query_id":"q4_complex_filter","query_name":"Complex Multi-condition Filter","commit_hash":"8494a3967a413ef263a50b87ce8b5924eb1aa948","run_count":1000,"min_ms":30.628,"max_ms":42.036458,"avg_ms":32.57023115699999,"median_ms":32.169959,"p70_ms":32.840875,"p80_ms":33.47225,"p90_ms":34.273167,"p95_ms":35.038875,"std_dev_ms":1.3110196511400676},"IsLowestAvg":true,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"28e042dd47610f65b37fcbd53390aef423f1a517","CommitTimestamp":"2025-08-12T03:21:36+08:00","Metric":{"query_id":"q4_complex_filter","query_name":"Complex Multi-condition Filter","commit_hash":"28e042dd47610f65b37fcbd53390aef423f1a517","run_count":1000,"min_ms":35.7975,"max_ms":43.582375,"avg_ms":38.03125674900002,"median_ms":37.827375,"p70_ms":38.409458,"p80_ms":38.910292,"p90_ms":39.437084,"p95_ms":39.999208,"std_dev_ms":1.027638425382408},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"ceab1e1653f5c1f0208f35a07322cf5c70e47a87","CommitTimestamp":"2025-08-11T20:20:07+01:00","Metric":{"query_id":"q4_complex_filter","query_name":"Complex Multi-condition Filter","commit_hash":"ceab1e1653f5c1f0208f35a07322cf5c70e47a87","run_count":1000,"min_ms":31.604292,"max_ms":42.18825,"avg_ms":36.343875632000035,"median_ms":36.541125,"p70_ms":37.22675,"p80_ms":37.77675,"p90_ms":38.705667,"p95_ms":39.284416,"std_dev_ms":1.90039802219789},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"c5cb6f4ad751feb855b01a864ad62b7df670b11f","CommitTimestamp":"2025-08-12T03:15:20+08:00","Metric":{"query_id":"q4_complex_filter","query_name":"Complex Multi-condition Filter","commit_hash":"c5cb6f4ad751feb855b01a864ad62b7df670b11f","run_count":1000,"min_ms":32.301958,"max_ms":45.392833,"avg_ms":34.63014705499997,"median_ms":34.064625,"p70_ms":34.898917,"p80_ms":35.813333,"p90_ms":37.323875,"p95_ms":38.168208,"std_dev_ms":1.668180174492099},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"f0e933484812cb3abc618f6c15736cb7d4840bbe","CommitTimestamp":"2025-08-12T03:07:41+08:00","Metric":{"query_id":"q4_complex_filter","query_name":"Complex Multi-condition Filter","commit_hash":"f0e933484812cb3abc618f6c15736cb7d4840bbe","run_count":1000,"min_ms":33.152792,"max_ms":53.298666,"avg_ms":35.640570276999995,"median_ms":34.900833,"p70_ms":35.617708,"p80_ms":36.658334,"p90_ms":38.978625,"p95_ms":39.936042,"std_dev_ms":2.0101806392801027},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"d375bfed45591f71bcb273f7d168ecd61a6bbf32","CommitTimestamp":"2025-08-11T11:52:07-07:00","Metric":{"query_id":"q4_complex_filter","query_name":"Complex Multi-condition Filter","commit_hash":"d375bfed45591f71bcb273f7d168ecd61a6bbf32","run_count":1000,"min_ms":33.951917,"max_ms":42.348083,"avg_ms":36.03817458899994,"median_ms":35.731709,"p70_ms":36.29675,"p80_ms":36.879916,"p90_ms":37.889333,"p95_ms":38.674833,"std_dev_ms":1.2976999617951475},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"ff77b702003b5bf6d9eaa759d37c4af3aefd9f4d","CommitTimestamp":"2025-08-11T12:58:20-05:00","Metric":{"query_id":"q4_complex_filter","query_name":"Complex Multi-condition Filter","commit_hash":"ff77b702003b5bf6d9eaa759d37c4af3aefd9f4d","run_count":1000,"min_ms":30.795417,"max_ms":39.776041,"avg_ms":32.81220846100003,"median_ms":32.664792,"p70_ms":33.079417,"p80_ms":33.332333,"p90_ms":33.72425,"p95_ms":34.568,"std_dev_ms":1.0841092901359723},"IsLowestAvg":false,"IsLowestP95":true,"IsLatest":false}]},{"QueryID":"q6_distinct_count","QueryName":"Distinct Operations","Metrics":[{"CommitHash":"7d5214512740b4dfb742b6b3d91ed9affcc2c9d0","CommitTimestamp":"2025-08-11T17:35:48-04:00","Metric":{"query_id":"q6_distinct_count","query_name":"Distinct Operations","commit_hash":"7d5214512740b4dfb742b6b3d91ed9affcc2c9d0","run_count":1000,"min_ms":32.959333,"max_ms":41.21125,"avg_ms":36.79842446900007,"median_ms":36.800125,"p70_ms":37.364125,"p80_ms":37.728125,"p90_ms":38.295208,"p95_ms":38.68375,"std_dev_ms":1.1799839525096194},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":true},{"CommitHash":"a1431e2371ee025940d8c9971007c7727aa57e34","CommitTimestamp":"2025-08-11T13:08:21-07:00","Metric":{"query_id":"q6_distinct_count","query_name":"Distinct Operations","commit_hash":"a1431e2371ee025940d8c9971007c7727aa57e34","run_count":1000,"min_ms":34.993417,"max_ms":40.758083,"avg_ms":37.019551796999984,"median_ms":36.872458,"p70_ms":37.4345,"p80_ms":37.815375,"p90_ms":38.375,"p95_ms":38.831917,"std_dev_ms":0.9528903039669494},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"80d105840da033f81341f95ceda367bf1cc62828","CommitTimestamp":"2025-08-11T13:08:03-07:00","Metric":{"query_id":"q6_distinct_count","query_name":"Distinct Operations","commit_hash":"80d105840da033f81341f95ceda367bf1cc62828","run_count":1000,"min_ms":36.0825,"max_ms":135.11525,"avg_ms":39.09642558599998,"median_ms":38.68675,"p70_ms":39.15725,"p80_ms":39.396459,"p90_ms":39.860959,"p95_ms":40.397417,"std_dev_ms":4.650286508225259},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"8494a3967a413ef263a50b87ce8b5924eb1aa948","CommitTimestamp":"2025-08-11T21:31:25+02:00","Metric":{"query_id":"q6_distinct_count","query_name":"Distinct Operations","commit_hash":"8494a3967a413ef263a50b87ce8b5924eb1aa948","run_count":1000,"min_ms":30.313083,"max_ms":40.254375,"avg_ms":32.25576042700002,"median_ms":31.825084,"p70_ms":32.422459,"p80_ms":33.09425,"p90_ms":33.904042,"p95_ms":35.056792,"std_dev_ms":1.3087003364458987},"IsLowestAvg":true,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"28e042dd47610f65b37fcbd53390aef423f1a517","CommitTimestamp":"2025-08-12T03:21:36+08:00","Metric":{"query_id":"q6_distinct_count","query_name":"Distinct Operations","commit_hash":"28e042dd47610f65b37fcbd53390aef423f1a517","run_count":1000,"min_ms":35.236708,"max_ms":41.400834,"avg_ms":37.847947773,"median_ms":37.707042,"p70_ms":38.255875,"p80_ms":38.661958,"p90_ms":39.225083,"p95_ms":39.655584,"std_dev_ms":0.9773839561217461},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"ceab1e1653f5c1f0208f35a07322cf5c70e47a87","CommitTimestamp":"2025-08-11T20:20:07+01:00","Metric":{"query_id":"q6_distinct_count","query_name":"Distinct Operations","commit_hash":"ceab1e1653f5c1f0208f35a07322cf5c70e47a87","run_count":1000,"min_ms":35.822625,"max_ms":42.006542,"avg_ms":37.79036682900003,"median_ms":37.60775,"p70_ms":38.131167,"p80_ms":38.550291,"p90_ms":39.195958,"p95_ms":39.723542,"std_dev_ms":0.9841389773700926},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"c5cb6f4ad751feb855b01a864ad62b7df670b11f","CommitTimestamp":"2025-08-12T03:15:20+08:00","Metric":{"query_id":"q6_distinct_count","query_name":"Distinct Operations","commit_hash":"c5cb6f4ad751feb855b01a864ad62b7df670b11f","run_count":1000,"min_ms":32.734792,"max_ms":40.864916,"avg_ms":35.293291396,"median_ms":34.62075,"p70_ms":35.710458,"p80_ms":37.056333,"p90_ms":38.398417,"p95_ms":39.062291,"std_dev_ms":1.8363337810461182},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"f0e933484812cb3abc618f6c15736cb7d4840bbe","CommitTimestamp":"2025-08-12T03:07:41+08:00","Metric":{"query_id":"q6_distinct_count","query_name":"Distinct Operations","commit_hash":"f0e933484812cb3abc618f6c15736cb7d4840bbe","run_count":1000,"min_ms":33.437875,"max_ms":45.739916,"avg_ms":35.67423306299997,"median_ms":35.063625,"p70_ms":35.653708,"p80_ms":36.828416,"p90_ms":38.384375,"p95_ms":39.301792,"std_dev_ms":1.708393020697216},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"d375bfed45591f71bcb273f7d168ecd61a6bbf32","CommitTimestamp":"2025-08-11T11:52:07-07:00","Metric":{"query_id":"q6_distinct_count","query_name":"Distinct Operations","commit_hash":"d375bfed45591f71bcb273f7d168ecd61a6bbf32","run_count":1000,"min_ms":33.487375,"max_ms":42.322958,"avg_ms":35.796299241999996,"median_ms":35.420875,"p70_ms":35.999375,"p80_ms":36.511625,"p90_ms":37.650083,"p95_ms":38.863667,"std_dev_ms":1.412863356365015},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"ff77b702003b5bf6d9eaa759d37c4af3aefd9f4d","CommitTimestamp":"2025-08-11T12:58:20-05:00","Metric":{"query_id":"q6_distinct_count","query_name":"Distinct Operations","commit_hash":"ff77b702003b5bf6d9eaa759d37c4af3aefd9f4d","run_count":1000,"min_ms":30.566542,"max_ms":39.922583,"avg_ms":32.74293609099999,"median_ms":32.604042,"p70_ms":33.010042,"p80_ms":33.302667,"p90_ms":33.735042,"p95_ms":34.768083,"std_dev_ms":1.1168901758374719},"IsLowestAvg":false,"IsLowestP95":true,"IsLatest":false}]},{"QueryID":"q7_top_n_sorting","QueryName":"Top-N with Sorting","Metrics":[{"CommitHash":"7d5214512740b4dfb742b6b3d91ed9affcc2c9d0","CommitTimestamp":"2025-08-11T17:35:48-04:00","Metric":{"query_id":"q7_top_n_sorting","query_name":"Top-N with Sorting","commit_hash":"7d5214512740b4dfb742b6b3d91ed9affcc2c9d0","run_count":1000,"min_ms":29.718625,"max_ms":42.46375,"avg_ms":32.89123070000001,"median_ms":32.123625,"p70_ms":33.785667,"p80_ms":34.599542,"p90_ms":36.35525,"p95_ms":37.522542,"std_dev_ms":2.237691531217664},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":true},{"CommitHash":"a1431e2371ee025940d8c9971007c7727aa57e34","CommitTimestamp":"2025-08-11T13:08:21-07:00","Metric":{"query_id":"q7_top_n_sorting","query_name":"Top-N with Sorting","commit_hash":"a1431e2371ee025940d8c9971007c7727aa57e34","run_count":1000,"min_ms":34.892709,"max_ms":40.025417,"avg_ms":36.96281884299999,"median_ms":36.818166,"p70_ms":37.415958,"p80_ms":37.8555,"p90_ms":38.354625,"p95_ms":38.679667,"std_dev_ms":0.9583818197787645},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"80d105840da033f81341f95ceda367bf1cc62828","CommitTimestamp":"2025-08-11T13:08:03-07:00","Metric":{"query_id":"q7_top_n_sorting","query_name":"Top-N with Sorting","commit_hash":"80d105840da033f81341f95ceda367bf1cc62828","run_count":1000,"min_ms":36.020791,"max_ms":130.27975,"avg_ms":39.165695798,"median_ms":38.776167,"p70_ms":39.21125,"p80_ms":39.480833,"p90_ms":39.918916,"p95_ms":40.457,"std_dev_ms":4.331792022506383},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"8494a3967a413ef263a50b87ce8b5924eb1aa948","CommitTimestamp":"2025-08-11T21:31:25+02:00","Metric":{"query_id":"q7_top_n_sorting","query_name":"Top-N with Sorting","commit_hash":"8494a3967a413ef263a50b87ce8b5924eb1aa948","run_count":1000,"min_ms":30.256584,"max_ms":41.751167,"avg_ms":32.12346813900001,"median_ms":31.651833,"p70_ms":32.286209,"p80_ms":32.744042,"p90_ms":34.109875,"p95_ms":35.341833,"std_dev_ms":1.541491461028502},"IsLowestAvg":true,"IsLowestP95":true,"IsLatest":false},{"CommitHash":"28e042dd47610f65b37fcbd53390aef423f1a517","CommitTimestamp":"2025-08-12T03:21:36+08:00","Metric":{"query_id":"q7_top_n_sorting","query_name":"Top-N with Sorting","commit_hash":"28e042dd47610f65b37fcbd53390aef423f1a517","run_count":1000,"min_ms":34.932416,"max_ms":42.7505,"avg_ms":37.53738608099998,"median_ms":37.336917,"p70_ms":37.882083,"p80_ms":38.273166,"p90_ms":38.902917,"p95_ms":39.444458,"std_dev_ms":0.9746816074294143},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"ceab1e1653f5c1f0208f35a07322cf5c70e47a87","CommitTimestamp":"2025-08-11T20:20:07+01:00","Metric":{"query_id":"q7_top_n_sorting","query_name":"Top-N with Sorting","commit_hash":"ceab1e1653f5c1f0208f35a07322cf5c70e47a87","run_count":1000,"min_ms":35.934875,"max_ms":41.335708,"avg_ms":37.723386532000006,"median_ms":37.546875,"p70_ms":38.003417,"p80_ms":38.469083,"p90_ms":39.127958,"p95_ms":39.58075,"std_dev_ms":0.9526864802411265},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"c5cb6f4ad751feb855b01a864ad62b7df670b11f","CommitTimestamp":"2025-08-12T03:15:20+08:00","Metric":{"query_id":"q7_top_n_sorting","query_name":"Top-N with Sorting","commit_hash":"c5cb6f4ad751feb855b01a864ad62b7df670b11f","run_count":1000,"min_ms":32.653083,"max_ms":50.477,"avg_ms":36.00992644600003,"median_ms":35.758667,"p70_ms":37.149959,"p80_ms":37.73125,"p90_ms":38.554791,"p95_ms":39.227083,"std_dev_ms":1.9292646581189707},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"f0e933484812cb3abc618f6c15736cb7d4840bbe","CommitTimestamp":"2025-08-12T03:07:41+08:00","Metric":{"query_id":"q7_top_n_sorting","query_name":"Top-N with Sorting","commit_hash":"f0e933484812cb3abc618f6c15736cb7d4840bbe","run_count":1000,"min_ms":33.2115,"max_ms":42.975625,"avg_ms":35.472952260999996,"median_ms":34.900584,"p70_ms":35.711334,"p80_ms":36.735416,"p90_ms":37.940167,"p95_ms":38.810167,"std_dev_ms":1.5688287654731112},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"d375bfed45591f71bcb273f7d168ecd61a6bbf32","CommitTimestamp":"2025-08-11T11:52:07-07:00","Metric":{"query_id":"q7_top_n_sorting","query_name":"Top-N with Sorting","commit_hash":"d375bfed45591f71bcb273f7d168ecd61a6bbf32","run_count":1000,"min_ms":33.421625,"max_ms":41.379875,"avg_ms":34.98691117399996,"median_ms":34.535708,"p70_ms":35.003792,"p80_ms":35.43525,"p90_ms":36.8155,"p95_ms":38.276,"std_dev_ms":1.3454876450256525},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"ff77b702003b5bf6d9eaa759d37c4af3aefd9f4d","CommitTimestamp":"2025-08-11T12:58:20-05:00","Metric":{"query_id":"q7_top_n_sorting","query_name":"Top-N with Sorting","commit_hash":"ff77b702003b5bf6d9eaa759d37c4af3aefd9f4d","run_count":1000,"min_ms":30.765333,"max_ms":57.707083,"avg_ms":34.76416869300001,"median_ms":34.4,"p70_ms":35.593792,"p80_ms":36.559333,"p90_ms":37.88875,"p95_ms":38.861917,"std_dev_ms":2.3668032520678954},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false}]},{"QueryID":"q9_window_functions","QueryName":"Window Functions","Metrics":[{"CommitHash":"7d5214512740b4dfb742b6b3d91ed9affcc2c9d0","CommitTimestamp":"2025-08-11T17:35:48-04:00","Metric":{"query_id":"q9_window_functions","query_name":"Window Functions","commit_hash":"7d5214512740b4dfb742b6b3d91ed9affcc2c9d0","run_count":1000,"min_ms":30.062292,"max_ms":40.12325,"avg_ms":32.055435027999955,"median_ms":31.580708,"p70_ms":32.155625,"p80_ms":32.724,"p90_ms":33.87725,"p95_ms":35.619833,"std_dev_ms":1.569224126685223},"IsLowestAvg":true,"IsLowestP95":false,"IsLatest":true},{"CommitHash":"a1431e2371ee025940d8c9971007c7727aa57e34","CommitTimestamp":"2025-08-11T13:08:21-07:00","Metric":{"query_id":"q9_window_functions","query_name":"Window Functions","commit_hash":"a1431e2371ee025940d8c9971007c7727aa57e34","run_count":1000,"min_ms":35.080667,"max_ms":41.625416,"avg_ms":37.379289743999955,"median_ms":37.204458,"p70_ms":37.811833,"p80_ms":38.179542,"p90_ms":38.762875,"p95_ms":39.279417,"std_dev_ms":1.0120097287502983},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"80d105840da033f81341f95ceda367bf1cc62828","CommitTimestamp":"2025-08-11T13:08:03-07:00","Metric":{"query_id":"q9_window_functions","query_name":"Window Functions","commit_hash":"80d105840da033f81341f95ceda367bf1cc62828","run_count":1000,"min_ms":36.818833,"max_ms":123.292125,"avg_ms":39.826831829,"median_ms":39.432708,"p70_ms":39.897334,"p80_ms":40.216208,"p90_ms":40.779667,"p95_ms":41.729417,"std_dev_ms":3.3851489460780173},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"8494a3967a413ef263a50b87ce8b5924eb1aa948","CommitTimestamp":"2025-08-11T21:31:25+02:00","Metric":{"query_id":"q9_window_functions","query_name":"Window Functions","commit_hash":"8494a3967a413ef263a50b87ce8b5924eb1aa948","run_count":1000,"min_ms":30.946958,"max_ms":48.879708,"avg_ms":33.80837112199999,"median_ms":33.009375,"p70_ms":34.448834,"p80_ms":35.459833,"p90_ms":36.978708,"p95_ms":38.558834,"std_dev_ms":2.275320175238357},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"28e042dd47610f65b37fcbd53390aef423f1a517","CommitTimestamp":"2025-08-12T03:21:36+08:00","Metric":{"query_id":"q9_window_functions","query_name":"Window Functions","commit_hash":"28e042dd47610f65b37fcbd53390aef423f1a517","run_count":1000,"min_ms":36.20825,"max_ms":41.766291,"avg_ms":38.15512173799999,"median_ms":37.938125,"p70_ms":38.472125,"p80_ms":38.864375,"p90_ms":39.500458,"p95_ms":40.130333,"std_dev_ms":0.9699296405461474},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"ceab1e1653f5c1f0208f35a07322cf5c70e47a87","CommitTimestamp":"2025-08-11T20:20:07+01:00","Metric":{"query_id":"q9_window_functions","query_name":"Window Functions","commit_hash":"ceab1e1653f5c1f0208f35a07322cf5c70e47a87","run_count":1000,"min_ms":36.322625,"max_ms":42.685208,"avg_ms":38.42281334100004,"median_ms":38.238,"p70_ms":38.81275,"p80_ms":39.286708,"p90_ms":39.878875,"p95_ms":40.289542,"std_dev_ms":1.0021400351497174},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"c5cb6f4ad751feb855b01a864ad62b7df670b11f","CommitTimestamp":"2025-08-12T03:15:20+08:00","Metric":{"query_id":"q9_window_functions","query_name":"Window Functions","commit_hash":"c5cb6f4ad751feb855b01a864ad62b7df670b11f","run_count":1000,"min_ms":30.516125,"max_ms":40.133792,"avg_ms":32.40022774599996,"median_ms":31.988959,"p70_ms":32.556958,"p80_ms":33.055959,"p90_ms":34.226417,"p95_ms":35.545958,"std_dev_ms":1.471020990758634},"IsLowestAvg":false,"IsLowestP95":true,"IsLatest":false},{"CommitHash":"f0e933484812cb3abc618f6c15736cb7d4840bbe","CommitTimestamp":"2025-08-12T03:07:41+08:00","Metric":{"query_id":"q9_window_functions","query_name":"Window Functions","commit_hash":"f0e933484812cb3abc618f6c15736cb7d4840bbe","run_count":1000,"min_ms":33.666583,"max_ms":42.74675,"avg_ms":35.477135591,"median_ms":34.91675,"p70_ms":35.337667,"p80_ms":36.101541,"p90_ms":37.960292,"p95_ms":39.619833,"std_dev_ms":1.6138240779135036},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"d375bfed45591f71bcb273f7d168ecd61a6bbf32","CommitTimestamp":"2025-08-11T11:52:07-07:00","Metric":{"query_id":"q9_window_functions","query_name":"Window Functions","commit_hash":"d375bfed45591f71bcb273f7d168ecd61a6bbf32","run_count":1000,"min_ms":33.736833,"max_ms":43.466167,"avg_ms":35.61658052299999,"median_ms":35.100708,"p70_ms":35.656917,"p80_ms":36.32275,"p90_ms":37.801958,"p95_ms":39.063292,"std_dev_ms":1.4880819277293023},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"ff77b702003b5bf6d9eaa759d37c4af3aefd9f4d","CommitTimestamp":"2025-08-11T12:58:20-05:00","Metric":{"query_id":"q9_window_functions","query_name":"Window Functions","commit_hash":"ff77b702003b5bf6d9eaa759d37c4af3aefd9f4d","run_count":1000,"min_ms":33.934958,"max_ms":40.450334,"avg_ms":35.894716766000016,"median_ms":35.744834,"p70_ms":36.228334,"p80_ms":36.583291,"p90_ms":37.193583,"p95_ms":37.81175,"std_dev_ms":1.0384937147109379},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false}]},{"QueryID":"q10_subquery","QueryName":"Subquery with Aggregation","Metrics":[{"CommitHash":"7d5214512740b4dfb742b6b3d91ed9affcc2c9d0","CommitTimestamp":"2025-08-11T17:35:48-04:00","Metric":{"query_id":"q10_subquery","query_name":"Subquery with Aggregation","commit_hash":"7d5214512740b4dfb742b6b3d91ed9affcc2c9d0","run_count":1000,"min_ms":30.275333,"max_ms":39.620791,"avg_ms":31.977188446999968,"median_ms":31.713833,"p70_ms":32.122083,"p80_ms":32.473417,"p90_ms":33.163208,"p95_ms":34.135709,"std_dev_ms":1.0724354857313587},"IsLowestAvg":true,"IsLowestP95":false,"IsLatest":true},{"CommitHash":"a1431e2371ee025940d8c9971007c7727aa57e34","CommitTimestamp":"2025-08-11T13:08:21-07:00","Metric":{"query_id":"q10_subquery","query_name":"Subquery with Aggregation","commit_hash":"a1431e2371ee025940d8c9971007c7727aa57e34","run_count":1000,"min_ms":35.856291,"max_ms":45.970459,"avg_ms":37.821758646999974,"median_ms":37.614875,"p70_ms":38.196417,"p80_ms":38.641125,"p90_ms":39.254625,"p95_ms":39.75125,"std_dev_ms":1.0259811209054504},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"80d105840da033f81341f95ceda367bf1cc62828","CommitTimestamp":"2025-08-11T13:08:03-07:00","Metric":{"query_id":"q10_subquery","query_name":"Subquery with Aggregation","commit_hash":"80d105840da033f81341f95ceda367bf1cc62828","run_count":1000,"min_ms":36.8595,"max_ms":128.718958,"avg_ms":40.10868204099997,"median_ms":39.805166,"p70_ms":40.315375,"p80_ms":40.606958,"p90_ms":41.103541,"p95_ms":41.634708,"std_dev_ms":3.408234709820529},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"8494a3967a413ef263a50b87ce8b5924eb1aa948","CommitTimestamp":"2025-08-11T21:31:25+02:00","Metric":{"query_id":"q10_subquery","query_name":"Subquery with Aggregation","commit_hash":"8494a3967a413ef263a50b87ce8b5924eb1aa948","run_count":1000,"min_ms":31.078583,"max_ms":38.079209,"avg_ms":32.75296581600001,"median_ms":32.520458,"p70_ms":33.06675,"p80_ms":33.465375,"p90_ms":33.938,"p95_ms":34.428042,"std_dev_ms":0.9736365359577774},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"28e042dd47610f65b37fcbd53390aef423f1a517","CommitTimestamp":"2025-08-12T03:21:36+08:00","Metric":{"query_id":"q10_subquery","query_name":"Subquery with Aggregation","commit_hash":"28e042dd47610f65b37fcbd53390aef423f1a517","run_count":1000,"min_ms":36.28325,"max_ms":41.814875,"avg_ms":38.55489137900005,"median_ms":38.363125,"p70_ms":38.880917,"p80_ms":39.34325,"p90_ms":39.968875,"p95_ms":40.349083,"std_dev_ms":0.9703987691265403},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"ceab1e1653f5c1f0208f35a07322cf5c70e47a87","CommitTimestamp":"2025-08-11T20:20:07+01:00","Metric":{"query_id":"q10_subquery","query_name":"Subquery with Aggregation","commit_hash":"ceab1e1653f5c1f0208f35a07322cf5c70e47a87","run_count":1000,"min_ms":36.53725,"max_ms":42.748708,"avg_ms":38.84225466900002,"median_ms":38.641,"p70_ms":39.238458,"p80_ms":39.674959,"p90_ms":40.316625,"p95_ms":40.804458,"std_dev_ms":1.0162101142293127},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"c5cb6f4ad751feb855b01a864ad62b7df670b11f","CommitTimestamp":"2025-08-12T03:15:20+08:00","Metric":{"query_id":"q10_subquery","query_name":"Subquery with Aggregation","commit_hash":"c5cb6f4ad751feb855b01a864ad62b7df670b11f","run_count":1000,"min_ms":30.617709,"max_ms":39.571791,"avg_ms":32.11939081699996,"median_ms":31.871917,"p70_ms":32.21325,"p80_ms":32.517333,"p90_ms":33.002833,"p95_ms":34.028625,"std_dev_ms":1.073937753502089},"IsLowestAvg":false,"IsLowestP95":true,"IsLatest":false},{"CommitHash":"f0e933484812cb3abc618f6c15736cb7d4840bbe","CommitTimestamp":"2025-08-12T03:07:41+08:00","Metric":{"query_id":"q10_subquery","query_name":"Subquery with Aggregation","commit_hash":"f0e933484812cb3abc618f6c15736cb7d4840bbe","run_count":1000,"min_ms":33.766125,"max_ms":42.90775,"avg_ms":35.60865398800001,"median_ms":35.1605,"p70_ms":35.555916,"p80_ms":35.987833,"p90_ms":37.6575,"p95_ms":39.138916,"std_dev_ms":1.4301952302536305},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"d375bfed45591f71bcb273f7d168ecd61a6bbf32","CommitTimestamp":"2025-08-11T11:52:07-07:00","Metric":{"query_id":"q10_subquery","query_name":"Subquery with Aggregation","commit_hash":"d375bfed45591f71bcb273f7d168ecd61a6bbf32","run_count":1000,"min_ms":34.092292,"max_ms":54.697417,"avg_ms":36.12848975999999,"median_ms":35.46975,"p70_ms":35.951542,"p80_ms":36.73275,"p90_ms":38.805084,"p95_ms":40.346375,"std_dev_ms":2.0046339349830555},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"ff77b702003b5bf6d9eaa759d37c4af3aefd9f4d","CommitTimestamp":"2025-08-11T12:58:20-05:00","Metric":{"query_id":"q10_subquery","query_name":"Subquery with Aggregation","commit_hash":"ff77b702003b5bf6d9eaa759d37c4af3aefd9f4d","run_count":1000,"min_ms":34.234667,"max_ms":40.317125,"avg_ms":36.051114845,"median_ms":35.868208,"p70_ms":36.387875,"p80_ms":36.686292,"p90_ms":37.187792,"p95_ms":37.963708,"std_dev_ms":0.9605860917350622},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false}]},{"QueryID":"q1_simple_filter","QueryName":"Simple Filter","Metrics":[{"CommitHash":"7d5214512740b4dfb742b6b3d91ed9affcc2c9d0","CommitTimestamp":"2025-08-11T17:35:48-04:00","Metric":{"query_id":"q1_simple_filter","query_name":"Simple Filter","commit_hash":"7d5214512740b4dfb742b6b3d91ed9affcc2c9d0","run_count":1000,"min_ms":34.197541,"max_ms":40.258792,"avg_ms":36.574987586,"median_ms":36.455291,"p70_ms":36.939833,"p80_ms":37.300792,"p90_ms":37.855333,"p95_ms":38.324292,"std_dev_ms":0.8998641843997189},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":true},{"CommitHash":"a1431e2371ee025940d8c9971007c7727aa57e34","CommitTimestamp":"2025-08-11T13:08:21-07:00","Metric":{"query_id":"q1_simple_filter","query_name":"Simple Filter","commit_hash":"a1431e2371ee025940d8c9971007c7727aa57e34","run_count":1000,"min_ms":34.227375,"max_ms":45.346958,"avg_ms":36.793281285000006,"median_ms":36.621708,"p70_ms":37.160292,"p80_ms":37.616917,"p90_ms":38.169625,"p95_ms":38.534791,"std_dev_ms":1.0156830999906137},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"80d105840da033f81341f95ceda367bf1cc62828","CommitTimestamp":"2025-08-11T13:08:03-07:00","Metric":{"query_id":"q1_simple_filter","query_name":"Simple Filter","commit_hash":"80d105840da033f81341f95ceda367bf1cc62828","run_count":1000,"min_ms":30.6225,"max_ms":40.695,"avg_ms":32.72999660900006,"median_ms":32.383792,"p70_ms":33.008,"p80_ms":33.41425,"p90_ms":34.115209,"p95_ms":35.03425,"std_dev_ms":1.4106133664207883},"IsLowestAvg":false,"IsLowestP95":true,"IsLatest":false},{"CommitHash":"8494a3967a413ef263a50b87ce8b5924eb1aa948","CommitTimestamp":"2025-08-11T21:31:25+02:00","Metric":{"query_id":"q1_simple_filter","query_name":"Simple Filter","commit_hash":"8494a3967a413ef263a50b87ce8b5924eb1aa948","run_count":1000,"min_ms":30.474917,"max_ms":43.511625,"avg_ms":32.967292987000036,"median_ms":32.532875,"p70_ms":33.581917,"p80_ms":34.164125,"p90_ms":35.582625,"p95_ms":36.953125,"std_dev_ms":1.837509524297484},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"28e042dd47610f65b37fcbd53390aef423f1a517","CommitTimestamp":"2025-08-12T03:21:36+08:00","Metric":{"query_id":"q1_simple_filter","query_name":"Simple Filter","commit_hash":"28e042dd47610f65b37fcbd53390aef423f1a517","run_count":1000,"min_ms":35.433666,"max_ms":41.479292,"avg_ms":37.603050649999986,"median_ms":37.400875,"p70_ms":37.971709,"p80_ms":38.388125,"p90_ms":39.019125,"p95_ms":39.549833,"std_dev_ms":0.9871611599703197},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"ceab1e1653f5c1f0208f35a07322cf5c70e47a87","CommitTimestamp":"2025-08-11T20:20:07+01:00","Metric":{"query_id":"q1_simple_filter","query_name":"Simple Filter","commit_hash":"ceab1e1653f5c1f0208f35a07322cf5c70e47a87","run_count":1000,"min_ms":30.808208,"max_ms":42.902583,"avg_ms":33.16496889099997,"median_ms":32.868833,"p70_ms":33.590792,"p80_ms":34.113417,"p90_ms":34.922959,"p95_ms":35.923875,"std_dev_ms":1.5633141488093762},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"c5cb6f4ad751feb855b01a864ad62b7df670b11f","CommitTimestamp":"2025-08-12T03:15:20+08:00","Metric":{"query_id":"q1_simple_filter","query_name":"Simple Filter","commit_hash":"c5cb6f4ad751feb855b01a864ad62b7df670b11f","run_count":1000,"min_ms":32.007833,"max_ms":42.839791,"avg_ms":34.46935332299994,"median_ms":33.8315,"p70_ms":34.704625,"p80_ms":35.760875,"p90_ms":37.5045,"p95_ms":38.649125,"std_dev_ms":1.9036247807898126},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"f0e933484812cb3abc618f6c15736cb7d4840bbe","CommitTimestamp":"2025-08-12T03:07:41+08:00","Metric":{"query_id":"q1_simple_filter","query_name":"Simple Filter","commit_hash":"f0e933484812cb3abc618f6c15736cb7d4840bbe","run_count":1000,"min_ms":32.835084,"max_ms":42.312666,"avg_ms":34.790695465000006,"median_ms":34.322333,"p70_ms":34.754666,"p80_ms":35.353625,"p90_ms":36.877625,"p95_ms":38.305125,"std_dev_ms":1.445643635478316},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"d375bfed45591f71bcb273f7d168ecd61a6bbf32","CommitTimestamp":"2025-08-11T11:52:07-07:00","Metric":{"query_id":"q1_simple_filter","query_name":"Simple Filter","commit_hash":"d375bfed45591f71bcb273f7d168ecd61a6bbf32","run_count":1000,"min_ms":33.468959,"max_ms":43.464792,"avg_ms":35.804082776000016,"median_ms":35.366292,"p70_ms":36.023208,"p80_ms":36.730666,"p90_ms":38.284333,"p95_ms":39.324333,"std_dev_ms":1.587900494245483},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"ff77b702003b5bf6d9eaa759d37c4af3aefd9f4d","CommitTimestamp":"2025-08-11T12:58:20-05:00","Metric":{"query_id":"q1_simple_filter","query_name":"Simple Filter","commit_hash":"ff77b702003b5bf6d9eaa759d37c4af3aefd9f4d","run_count":1000,"min_ms":29.86575,"max_ms":48.567958,"avg_ms":32.66300804300003,"median_ms":32.162208,"p70_ms":32.877083,"p80_ms":33.350792,"p90_ms":35.257167,"p95_ms":37.4435,"std_dev_ms":2.1126636679382234},"IsLowestAvg":true,"IsLowestP95":false,"IsLatest":false}]},{"QueryID":"q3_time_window","QueryName":"Time Window Aggregation","Metrics":[{"CommitHash":"7d5214512740b4dfb742b6b3d91ed9affcc2c9d0","CommitTimestamp":"2025-08-11T17:35:48-04:00","Metric":{"query_id":"q3_time_window","query_name":"Time Window Aggregation","commit_hash":"7d5214512740b4dfb742b6b3d91ed9affcc2c9d0","run_count":1000,"min_ms":34.556583,"max_ms":41.536583,"avg_ms":37.06288259899996,"median_ms":36.911167,"p70_ms":37.451875,"p80_ms":37.863834,"p90_ms":38.391458,"p95_ms":38.731709,"std_dev_ms":0.939293549019713},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":true},{"CommitHash":"a1431e2371ee025940d8c9971007c7727aa57e34","CommitTimestamp":"2025-08-11T13:08:21-07:00","Metric":{"query_id":"q3_time_window","query_name":"Time Window Aggregation","commit_hash":"a1431e2371ee025940d8c9971007c7727aa57e34","run_count":1000,"min_ms":34.760458,"max_ms":41.056625,"avg_ms":37.087980789,"median_ms":36.898333,"p70_ms":37.474,"p80_ms":37.940167,"p90_ms":38.470083,"p95_ms":38.846,"std_dev_ms":0.9731194692017769},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"80d105840da033f81341f95ceda367bf1cc62828","CommitTimestamp":"2025-08-11T13:08:03-07:00","Metric":{"query_id":"q3_time_window","query_name":"Time Window Aggregation","commit_hash":"80d105840da033f81341f95ceda367bf1cc62828","run_count":1000,"min_ms":35.458875,"max_ms":148.211416,"avg_ms":48.33500168900001,"median_ms":48.572958,"p70_ms":52.444167,"p80_ms":55.023459,"p90_ms":58.267041,"p95_ms":61.827167,"std_dev_ms":9.952030941990065},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"8494a3967a413ef263a50b87ce8b5924eb1aa948","CommitTimestamp":"2025-08-11T21:31:25+02:00","Metric":{"query_id":"q3_time_window","query_name":"Time Window Aggregation","commit_hash":"8494a3967a413ef263a50b87ce8b5924eb1aa948","run_count":1000,"min_ms":30.688292,"max_ms":42.412541,"avg_ms":32.99830184200004,"median_ms":32.298958,"p70_ms":33.434709,"p80_ms":34.161709,"p90_ms":35.550875,"p95_ms":37.508,"std_dev_ms":2.013558897161165},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"28e042dd47610f65b37fcbd53390aef423f1a517","CommitTimestamp":"2025-08-12T03:21:36+08:00","Metric":{"query_id":"q3_time_window","query_name":"Time Window Aggregation","commit_hash":"28e042dd47610f65b37fcbd53390aef423f1a517","run_count":1000,"min_ms":35.247375,"max_ms":40.840958,"avg_ms":37.626473715999964,"median_ms":37.413875,"p70_ms":37.985291,"p80_ms":38.434667,"p90_ms":39.192791,"p95_ms":39.549791,"std_dev_ms":1.0016066329512308},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"ceab1e1653f5c1f0208f35a07322cf5c70e47a87","CommitTimestamp":"2025-08-11T20:20:07+01:00","Metric":{"query_id":"q3_time_window","query_name":"Time Window Aggregation","commit_hash":"ceab1e1653f5c1f0208f35a07322cf5c70e47a87","run_count":1000,"min_ms":30.925666,"max_ms":57.255791,"avg_ms":34.77585850799999,"median_ms":34.032625,"p70_ms":35.337,"p80_ms":37.02275,"p90_ms":38.877709,"p95_ms":39.637041,"std_dev_ms":2.634141778812288},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"c5cb6f4ad751feb855b01a864ad62b7df670b11f","CommitTimestamp":"2025-08-12T03:15:20+08:00","Metric":{"query_id":"q3_time_window","query_name":"Time Window Aggregation","commit_hash":"c5cb6f4ad751feb855b01a864ad62b7df670b11f","run_count":1000,"min_ms":32.068083,"max_ms":39.461791,"avg_ms":33.68245735900001,"median_ms":33.421041,"p70_ms":33.757833,"p80_ms":34.022959,"p90_ms":34.642917,"p95_ms":35.993458,"std_dev_ms":1.0906804864318762},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"f0e933484812cb3abc618f6c15736cb7d4840bbe","CommitTimestamp":"2025-08-12T03:07:41+08:00","Metric":{"query_id":"q3_time_window","query_name":"Time Window Aggregation","commit_hash":"f0e933484812cb3abc618f6c15736cb7d4840bbe","run_count":1000,"min_ms":33.174167,"max_ms":39.843708,"avg_ms":34.392956827,"median_ms":34.258292,"p70_ms":34.514,"p80_ms":34.717709,"p90_ms":35.172625,"p95_ms":35.852208,"std_dev_ms":0.7539653371109651},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"d375bfed45591f71bcb273f7d168ecd61a6bbf32","CommitTimestamp":"2025-08-11T11:52:07-07:00","Metric":{"query_id":"q3_time_window","query_name":"Time Window Aggregation","commit_hash":"d375bfed45591f71bcb273f7d168ecd61a6bbf32","run_count":1000,"min_ms":33.654292,"max_ms":41.894959,"avg_ms":35.759601843,"median_ms":35.51325,"p70_ms":36.028583,"p80_ms":36.443208,"p90_ms":37.314542,"p95_ms":37.896917,"std_dev_ms":1.1318854720194569},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"ff77b702003b5bf6d9eaa759d37c4af3aefd9f4d","CommitTimestamp":"2025-08-11T12:58:20-05:00","Metric":{"query_id":"q3_time_window","query_name":"Time Window Aggregation","commit_hash":"ff77b702003b5bf6d9eaa759d37c4af3aefd9f4d","run_count":1000,"min_ms":30.556667,"max_ms":37.694791,"avg_ms":32.59634808000005,"median_ms":32.527042,"p70_ms":32.89675,"p80_ms":33.096,"p90_ms":33.537333,"p95_ms":34.015042,"std_dev_ms":0.9044981156034277},"IsLowestAvg":true,"IsLowestP95":true,"IsLatest":false}]},{"QueryID":"q5_percentiles","QueryName":"Percentile Calculations","Metrics":[{"CommitHash":"7d5214512740b4dfb742b6b3d91ed9affcc2c9d0","CommitTimestamp":"2025-08-11T17:35:48-04:00","Metric":{"query_id":"q5_percentiles","query_name":"Percentile Calculations","commit_hash":"7d5214512740b4dfb742b6b3d91ed9affcc2c9d0","run_count":1000,"min_ms":34.603,"max_ms":39.858083,"avg_ms":36.86388770000006,"median_ms":36.741167,"p70_ms":37.223875,"p80_ms":37.554125,"p90_ms":38.137208,"p95_ms":38.56025,"std_dev_ms":0.8941858009363483},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":true},{"CommitHash":"a1431e2371ee025940d8c9971007c7727aa57e34","CommitTimestamp":"2025-08-11T13:08:21-07:00","Metric":{"query_id":"q5_percentiles","query_name":"Percentile Calculations","commit_hash":"a1431e2371ee025940d8c9971007c7727aa57e34","run_count":1000,"min_ms":34.422584,"max_ms":40.68,"avg_ms":36.98821050800001,"median_ms":36.861084,"p70_ms":37.350708,"p80_ms":37.769042,"p90_ms":38.351667,"p95_ms":38.869167,"std_dev_ms":0.9976425314936351},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"80d105840da033f81341f95ceda367bf1cc62828","CommitTimestamp":"2025-08-11T13:08:03-07:00","Metric":{"query_id":"q5_percentiles","query_name":"Percentile Calculations","commit_hash":"80d105840da033f81341f95ceda367bf1cc62828","run_count":1000,"min_ms":36.060042,"max_ms":124.44725,"avg_ms":39.01274032700004,"median_ms":38.483292,"p70_ms":39.076375,"p80_ms":39.501958,"p90_ms":40.388959,"p95_ms":41.570375,"std_dev_ms":3.7618844694515587},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"8494a3967a413ef263a50b87ce8b5924eb1aa948","CommitTimestamp":"2025-08-11T21:31:25+02:00","Metric":{"query_id":"q5_percentiles","query_name":"Percentile Calculations","commit_hash":"8494a3967a413ef263a50b87ce8b5924eb1aa948","run_count":1000,"min_ms":30.236833,"max_ms":39.300208,"avg_ms":31.903500437000005,"median_ms":31.597708,"p70_ms":32.120542,"p80_ms":32.621625,"p90_ms":33.431625,"p95_ms":34.061834,"std_dev_ms":1.1070673597549958},"IsLowestAvg":true,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"28e042dd47610f65b37fcbd53390aef423f1a517","CommitTimestamp":"2025-08-12T03:21:36+08:00","Metric":{"query_id":"q5_percentiles","query_name":"Percentile Calculations","commit_hash":"28e042dd47610f65b37fcbd53390aef423f1a517","run_count":1000,"min_ms":34.928791,"max_ms":42.768625,"avg_ms":37.82504341500001,"median_ms":37.643917,"p70_ms":38.150583,"p80_ms":38.620333,"p90_ms":39.249167,"p95_ms":39.712375,"std_dev_ms":0.9843044768137038},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"ceab1e1653f5c1f0208f35a07322cf5c70e47a87","CommitTimestamp":"2025-08-11T20:20:07+01:00","Metric":{"query_id":"q5_percentiles","query_name":"Percentile Calculations","commit_hash":"ceab1e1653f5c1f0208f35a07322cf5c70e47a87","run_count":1000,"min_ms":35.249458,"max_ms":41.281542,"avg_ms":37.584999371999984,"median_ms":37.407667,"p70_ms":37.963125,"p80_ms":38.332792,"p90_ms":39.036084,"p95_ms":39.441917,"std_dev_ms":0.9999807916000556},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"c5cb6f4ad751feb855b01a864ad62b7df670b11f","CommitTimestamp":"2025-08-12T03:15:20+08:00","Metric":{"query_id":"q5_percentiles","query_name":"Percentile Calculations","commit_hash":"c5cb6f4ad751feb855b01a864ad62b7df670b11f","run_count":1000,"min_ms":32.544167,"max_ms":46.294708,"avg_ms":34.97247616099999,"median_ms":34.46,"p70_ms":35.338833,"p80_ms":36.211917,"p90_ms":37.7355,"p95_ms":38.828042,"std_dev_ms":1.7631665431581371},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"f0e933484812cb3abc618f6c15736cb7d4840bbe","CommitTimestamp":"2025-08-12T03:07:41+08:00","Metric":{"query_id":"q5_percentiles","query_name":"Percentile Calculations","commit_hash":"f0e933484812cb3abc618f6c15736cb7d4840bbe","run_count":1000,"min_ms":33.408042,"max_ms":42.204917,"avg_ms":35.63813514100005,"median_ms":35.02825,"p70_ms":35.926625,"p80_ms":36.936958,"p90_ms":38.308,"p95_ms":39.329,"std_dev_ms":1.6822852269649415},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"d375bfed45591f71bcb273f7d168ecd61a6bbf32","CommitTimestamp":"2025-08-11T11:52:07-07:00","Metric":{"query_id":"q5_percentiles","query_name":"Percentile Calculations","commit_hash":"d375bfed45591f71bcb273f7d168ecd61a6bbf32","run_count":1000,"min_ms":33.510458,"max_ms":43.240125,"avg_ms":35.842402082000014,"median_ms":35.302417,"p70_ms":36.016875,"p80_ms":36.832083,"p90_ms":38.4505,"p95_ms":39.597709,"std_dev_ms":1.6618900942505455},"IsLowestAvg":false,"IsLowestP95":false,"IsLatest":false},{"CommitHash":"ff77b702003b5bf6d9eaa759d37c4af3aefd9f4d","CommitTimestamp":"2025-08-11T12:58:20-05:00","Metric":{"query_id":"q5_percentiles","query_name":"Percentile Calculations","commit_hash":"ff77b702003b5bf6d9eaa759d37c4af3aefd9f4d","run_count":1000,"min_ms":30.492667,"max_ms":37.574667,"avg_ms":32.553029086999985,"median_ms":32.493666,"p70_ms":32.8615,"p80_ms":33.07375,"p90_ms":33.47775,"p95_ms":34.024625,"std_dev_ms":0.9190931191181717},"IsLowestAvg":false,"IsLowestP95":true,"IsLatest":false}]}];
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js is not loaded!');
+                return;
+            }
+            
+            
+            const queryColors = [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+                '#FF9F40', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'
+            ];
+            
+            
+            const allCommits = [];
+            metricsByQuery.forEach(queryGroup => {
+                queryGroup.Metrics.forEach(metric => {
+                    const shortCommit = metric.CommitHash.substring(0, 8);
+                    if (!allCommits.includes(shortCommit)) {
+                        allCommits.push(shortCommit);
+                    }
+                });
+            });
+            
+            
+            const avgDatasets = metricsByQuery.map((queryGroup, index) => {
+                const data = allCommits.map(commit => {
+                    const metric = queryGroup.Metrics.find(m => m.CommitHash.startsWith(commit));
+                    return metric ? parseFloat(metric.Metric.avg_ms.toFixed(2)) : 0;
+                });
+                
+                return {
+                    label: queryGroup.QueryName || queryGroup.QueryID,
+                    data: data,
+                    backgroundColor: queryColors[index % queryColors.length],
+                    borderColor: queryColors[index % queryColors.length],
+                    borderWidth: 1
+                };
+            });
+            
+            
+            const avgTotals = allCommits.map((commit, index) => {
+                let total = 0;
+                avgDatasets.forEach(dataset => {
+                    total += dataset.data[index] || 0;
+                });
+                return total.toFixed(2);
+            });
+            
+            avgDatasets.push({
+                label: 'Total',
+                data: avgTotals,
+                type: 'line',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'transparent',
+                borderWidth: 3,
+                fill: false,
+                pointRadius: 5,
+                pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                datalabels: {
+                    display: true,
+                    align: 'top',
+                    anchor: 'end',
+                    color: 'rgba(255, 99, 132, 1)',
+                    font: {
+                        weight: 'bold',
+                        size: 10
+                    },
+                    formatter: function(value) {
+                        return value + ' ms';
+                    }
+                }
+            });
+            
+            
+            const p95Datasets = metricsByQuery.map((queryGroup, index) => {
+                const data = allCommits.map(commit => {
+                    const metric = queryGroup.Metrics.find(m => m.CommitHash.startsWith(commit));
+                    return metric ? parseFloat(metric.Metric.p95_ms.toFixed(2)) : 0;
+                });
+                
+                return {
+                    label: queryGroup.QueryName || queryGroup.QueryID,
+                    data: data,
+                    backgroundColor: queryColors[index % queryColors.length],
+                    borderColor: queryColors[index % queryColors.length],
+                    borderWidth: 1
+                };
+            });
+            
+            
+            const p95Totals = allCommits.map((commit, index) => {
+                let total = 0;
+                p95Datasets.forEach(dataset => {
+                    total += dataset.data[index] || 0;
+                });
+                return total.toFixed(2);
+            });
+            
+            p95Datasets.push({
+                label: 'Total',
+                data: p95Totals,
+                type: 'line',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'transparent',
+                borderWidth: 3,
+                fill: false,
+                pointRadius: 5,
+                pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                datalabels: {
+                    display: true,
+                    align: 'top',
+                    anchor: 'end',
+                    color: 'rgba(255, 99, 132, 1)',
+                    font: {
+                        weight: 'bold',
+                        size: 10
+                    },
+                    formatter: function(value) {
+                        return value + ' ms';
+                    }
+                }
+            });
+            
+            
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 2,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + ' ms';
+                            }
+                        }
+                    },
+                    datalabels: {
+                        anchor: 'center',
+                        align: 'center',
+                        color: 'white',
+                        font: {
+                            weight: 'bold',
+                            size: 8
+                        },
+                        formatter: function(value, context) {
+                            
+                            if (context.dataset.type === 'line') {
+                                return ''; 
+                            }
+                            return value > 0 ? value.toFixed(1) : '';
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        title: {
+                            display: true,
+                            text: 'Commits'
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        title: {
+                            display: true,
+                            text: 'Latency (ms)'
+                        },
+                        beginAtZero: true
+                    }
+                }
+            };
+            
+            
+            new Chart(document.getElementById('avgLatencyChart'), {
+                type: 'bar',
+                data: {
+                    labels: allCommits,
+                    datasets: avgDatasets
+                },
+                plugins: [ChartDataLabels],
+                options: chartOptions
+            });
+            
+            
+            new Chart(document.getElementById('p95LatencyChart'), {
+                type: 'bar',
+                data: {
+                    labels: allCommits,
+                    datasets: p95Datasets
+                },
+                plugins: [ChartDataLabels],
+                options: chartOptions
+            });
+            
+            
+            function populateMetricsTable(selectedQueryID) {
+                const tableBody = document.getElementById('metricsTableBody');
+                tableBody.innerHTML = '';
+                
+                const queryGroup = metricsByQuery.find(q => q.QueryID === selectedQueryID);
+                if (!queryGroup) return;
+                
+                queryGroup.Metrics.forEach(metricWithCommit => {
+                    const row = document.createElement('tr');
+                    if (metricWithCommit.IsLatest) {
+                        row.className = 'has-background-info-light';
+                    }
+                    
+                    const timestamp = new Date(metricWithCommit.CommitTimestamp).toLocaleString();
+                    const shortCommit = metricWithCommit.CommitHash.substring(0, 8);
+                    
+                    row.innerHTML = `
+                        <td>
+                            <code class="has-text-primary">${shortCommit}</code>
+                            ${metricWithCommit.IsLatest ? '<span class="tag is-info is-light ml-1"><span class="icon is-small"><i class="mdi mdi-star"></i></span></span>' : ''}
+                            <br>
+                            <small class="has-text-grey">${timestamp}</small>
+                        </td>
+                        <td class="has-text-centered${metricWithCommit.IsLowestAvg ? ' highlight-success' : ''}">${metricWithCommit.Metric.avg_ms.toFixed(2)}</td>
+                        <td class="has-text-centered">${metricWithCommit.Metric.min_ms.toFixed(2)}</td>
+                        <td class="has-text-centered">${metricWithCommit.Metric.max_ms.toFixed(2)}</td>
+                        <td class="has-text-centered">${metricWithCommit.Metric.median_ms.toFixed(2)}</td>
+                        <td class="has-text-centered">${metricWithCommit.Metric.p70_ms.toFixed(2)}</td>
+                        <td class="has-text-centered">${metricWithCommit.Metric.p80_ms.toFixed(2)}</td>
+                        <td class="has-text-centered">${metricWithCommit.Metric.p90_ms.toFixed(2)}</td>
+                        <td class="has-text-centered${metricWithCommit.IsLowestP95 ? ' highlight-success' : ''}">${metricWithCommit.Metric.p95_ms.toFixed(2)}</td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+            }
+            
+            
+            const querySelect = document.getElementById('querySelect');
+            querySelect.addEventListener('change', function() {
+                populateMetricsTable(this.value);
+            });
+            
+            
+            if (metricsByQuery.length > 0) {
+                populateMetricsTable(metricsByQuery[0].QueryID);
+            }
+        });
+    </script>
+</body>
+</html>
