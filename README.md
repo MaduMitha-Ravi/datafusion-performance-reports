@@ -64,7 +64,7 @@ Reports are updated periodically when significant changes are made to DataFusion
 
 | Date | Description | Key Findings |
 |------|-------------|--------------|
-| Aug 12, 2024 | Latest benchmark run | Performance analysis across 15 commits |
+| Aug 15, 2025 | Latest benchmark run | Performance analysis across 10 commits |
 
 ## 🔗 Related Resources
 
