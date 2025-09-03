@@ -3022,16 +3022,7 @@
         
         async function loadHistoryManifest() {
             try {
-                console.log('Loading history manifest...');
-                const response = await fetch('history.json');
-                console.log('History manifest response:', response.status);
-                if (!response.ok) {
-                    console.log('No history manifest found (status: ' + response.status + ')');
-                    return;
-                }
-                
-                const manifest = await response.json();
-                console.log('History manifest loaded:', manifest);
+                console.log('Discovering available benchmark reports...');
                 const select = document.getElementById('historySelect');
                 
                 if (!select) {
@@ -3039,26 +3030,124 @@
                     return;
                 }
                 
-                
+                // Clear existing options except the first one
                 while (select.options.length > 1) {
                     select.remove(1);
                 }
                 
+                // Generate potential benchmark filenames for the last 60 days
+                const potentialFiles = [];
+                const today = new Date();
                 
-                if (manifest.entries && manifest.entries.length > 0) {
-                    console.log('Adding ' + manifest.entries.length + ' entries to dropdown');
-                    manifest.entries.forEach(entry => {
+                // Check last 60 days
+                for (let daysAgo = 0; daysAgo < 60; daysAgo++) {
+                    const date = new Date(today);
+                    date.setDate(date.getDate() - daysAgo);
+                    const dateStr = date.toISOString().split('T')[0];
+                    
+                    // Common time patterns (adjust based on your actual run times)
+                    const commonTimes = [
+                        '000000', '010000', '020000', '030000', '040000', '050000',
+                        '060000', '070000', '080000', '090000', '100000', '110000',
+                        '113901', '120000', '125706', '130000', '140000', '150000',
+                        '160000', '170000', '180000', '190000', '200000', '210000',
+                        '220000', '230000', '235959'
+                    ];
+                    
+                    commonTimes.forEach(time => {
+                        potentialFiles.push(`benchmark_${dateStr}_${time}.html`);
+                    });
+                }
+                
+                // Check files in batches to avoid too many concurrent requests
+                const batchSize = 20;
+                const foundFiles = [];
+                
+                for (let i = 0; i < potentialFiles.length; i += batchSize) {
+                    const batch = potentialFiles.slice(i, i + batchSize);
+                    
+                    const batchPromises = batch.map(async (filename) => {
+                        try {
+                            const response = await fetch(filename, { method: 'HEAD' });
+                            if (response.ok) {
+                                console.log('Found benchmark file:', filename);
+                                
+                                // Extract date from filename
+                                const match = filename.match(/benchmark_(\d{4}-\d{2}-\d{2})_(\d{2})(\d{2})(\d{2})\.html/);
+                                if (match) {
+                                    const dateStr = match[1];
+                                    const hour = match[2];
+                                    const min = match[3];
+                                    
+                                    return {
+                                        filename: filename,
+                                        date: `${dateStr} ${hour}:${min}`,
+                                        sortKey: `${dateStr}_${hour}${min}`
+                                    };
+                                }
+                            }
+                        } catch (e) {
+                            // File doesn't exist, ignore
+                        }
+                        return null;
+                    });
+                    
+                    const results = await Promise.all(batchPromises);
+                    foundFiles.push(...results.filter(f => f !== null));
+                    
+                    // Stop if we've found enough files
+                    if (foundFiles.length >= 10) {
+                        break;
+                    }
+                }
+                
+                // Sort files by date (most recent first)
+                foundFiles.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+                
+                // Fetch metadata for found files
+                const filesWithMetadata = await Promise.all(
+                    foundFiles.slice(0, 10).map(async (file) => {
+                        try {
+                            const response = await fetch(file.filename);
+                            const htmlText = await response.text();
+                            
+                            // Extract metadata
+                            const dateMatch = htmlText.match(/<h3 class="title is-5 has-text-white">([\d-]+ [\d:]+)<\/h3>\s*<p class="subtitle is-6 has-text-white-bis">Last Updated<\/p>/);
+                            const commitMatch = htmlText.match(/<h2 class="title is-2 has-text-white">(\d+)<\/h2>\s*<p class="subtitle is-6 has-text-white-bis">Total Commits<\/p>/);
+                            const queryMatch = htmlText.match(/<h2 class="title is-2 has-text-white">(\d+)<\/h2>\s*<p class="subtitle is-6 has-text-white-bis">Benchmark Queries<\/p>/);
+                            
+                            return {
+                                ...file,
+                                date: dateMatch ? dateMatch[1] : file.date,
+                                commitCount: commitMatch ? commitMatch[1] : '?',
+                                queryCount: queryMatch ? queryMatch[1] : '?'
+                            };
+                        } catch (e) {
+                            return {
+                                ...file,
+                                commitCount: '?',
+                                queryCount: '?'
+                            };
+                        }
+                    })
+                );
+                
+                // Add found files to dropdown
+                if (filesWithMetadata.length > 0) {
+                    console.log('Adding ' + filesWithMetadata.length + ' benchmark files to dropdown');
+                    filesWithMetadata.forEach(file => {
                         const option = document.createElement('option');
-                        option.value = entry.filename;
-                        option.textContent = entry.date + ' (' + entry.commitCount + ' commits, ' + entry.queryCount + ' queries)';
+                        option.value = file.filename;
+                        option.textContent = `${file.date} (${file.commitCount} commits, ${file.queryCount} queries)`;
                         select.appendChild(option);
                         console.log('Added option:', option.textContent);
                     });
                 } else {
-                    console.log('No entries found in manifest');
+                    console.log('No benchmark files found');
                 }
+                
             } catch (error) {
-                console.error('Failed to load history manifest:', error);
+                console.error('Failed to discover benchmark files:', error);
             }
         }
         
