@@ -3172,29 +3172,90 @@
                 }
                 
                 const htmlText = await response.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(htmlText, 'text/html');
                 
+                // Extract the JavaScript data from the HTML
+                const metricsMatch = htmlText.match(/const metricsByQuery = (\[[\s\S]*?\]);/);
+                const commitInfoMatch = htmlText.match(/const commitInfo = (\{[\s\S]*?\});/);
+                const timestampMatch = htmlText.match(/const benchmarkTimestamp = "(.*?)";/);
+                const configMatch = htmlText.match(/const benchmarkConfig = (\{[\s\S]*?\});/);
+                const summaryMatch = htmlText.match(/const summaryStats = (\{[\s\S]*?\});/);
                 
-                const newContainer = doc.querySelector('.main-container');
-                const currentContainer = document.querySelector('.main-container');
+                if (!metricsMatch) {
+                    throw new Error('Could not extract benchmark data from historical file');
+                }
                 
-                if (newContainer && currentContainer) {
+                // Parse the extracted data
+                try {
+                    // Use eval in a safe context to parse JavaScript object literals
+                    const evalInContext = (code) => {
+                        return (new Function('return ' + code))();
+                    };
                     
-                    currentContainer.innerHTML = newContainer.innerHTML;
-                    
-                    
-                    const scriptElement = doc.querySelector('script');
-                    if (scriptElement) {
-                        
-                        const scriptText = scriptElement.textContent;
-                        const dataMatch = scriptText.match(/const metricsByQuery = (.*?);/s);
-                        if (dataMatch) {
-                            eval('window.metricsByQuery = ' + dataMatch[1]);
-                            
-                            initializeCharts();
-                        }
+                    // Update the global variables with historical data
+                    window.metricsByQuery = evalInContext(metricsMatch[1]);
+                    if (commitInfoMatch) {
+                        window.commitInfo = evalInContext(commitInfoMatch[1]);
                     }
+                    if (timestampMatch) {
+                        window.benchmarkTimestamp = timestampMatch[1];
+                    }
+                    if (configMatch) {
+                        window.benchmarkConfig = evalInContext(configMatch[1]);
+                    }
+                    if (summaryMatch) {
+                        window.summaryStats = evalInContext(summaryMatch[1]);
+                    }
+                    
+                    // Parse the DOM to get the container structure
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(htmlText, 'text/html');
+                    
+                    const newContainer = doc.querySelector('.main-container');
+                    const currentContainer = document.querySelector('.main-container');
+                    
+                    if (newContainer && currentContainer) {
+                        // Update the container HTML
+                        currentContainer.innerHTML = newContainer.innerHTML;
+                    
+                    
+                    }
+                    
+                    // Destroy existing charts before reinitializing
+                    if (window.Chart) {
+                        // Destroy all existing chart instances
+                        document.querySelectorAll('canvas').forEach(canvas => {
+                            const chart = Chart.getChart(canvas);
+                            if (chart) {
+                                chart.destroy();
+                            }
+                        });
+                    }
+                    
+                    // Re-initialize charts with the historical data
+                    if (typeof initCharts === 'function') {
+                        initCharts();
+                    }
+                    
+                    // Re-bind the filter functionality
+                    if (typeof filterMetricsTable === 'function') {
+                        filterMetricsTable();
+                    }
+                    
+                    // Preserve the dropdown selection
+                    const historySelect = document.getElementById('historySelect');
+                    if (historySelect) {
+                        // Re-populate the dropdown (it was replaced with the HTML update)
+                        loadHistoryManifest().then(() => {
+                            // Set the current selection after dropdown is repopulated
+                            const newHistorySelect = document.getElementById('historySelect');
+                            if (newHistorySelect) {
+                                newHistorySelect.value = filename;
+                            }
+                        });
+                    }
+                } catch (parseError) {
+                    console.error('Failed to parse historical data:', parseError);
+                    throw new Error('Failed to parse historical data');
                 }
             } catch (error) {
                 console.error('Failed to load historical data:', error);
