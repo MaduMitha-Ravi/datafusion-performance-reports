@@ -196,7 +196,6 @@
                                     <strong>Select Date:</strong>
                                 </label>
                                 <select id="historySelect" onchange="loadHistoricalData(this.value)">
-                                    <option value="current">Latest Results</option>
                                 </select>
                             </div>
                         </div>
@@ -214,16 +213,6 @@
 
     <div class="main-container">
         
-        <div class="notification is-info is-light mb-4">
-            <div class="content">
-                <p>
-                    <span class="icon"><i class="mdi mdi-information"></i></span>
-                    <strong>Static Report:</strong> This is a self-contained HTML report with all benchmark data embedded. 
-                    You can host this file on GitHub Pages or any static hosting service.
-                    The latest commit is highlighted with a <span class="tag is-info is-light"><span class="icon"><i class="mdi mdi-star"></i></span><span>Latest</span></span> badge.
-                </p>
-            </div>
-        </div>
 
         
         <div class="columns is-multiline mb-6">
@@ -232,7 +221,7 @@
                     <span class="icon is-large mb-3">
                         <i class="mdi mdi-source-branch mdi-48px"></i>
                     </span>
-                    <h2 class="title is-2 has-text-white">10</h2>
+                    <h2 class="title is-2 has-text-white" id="totalCommitsCount">10</h2>
                     <p class="subtitle is-6 has-text-white-bis">Total Commits</p>
                 </div>
             </div>
@@ -241,7 +230,7 @@
                     <span class="icon is-large mb-3">
                         <i class="mdi mdi-magnify mdi-48px"></i>
                     </span>
-                    <h2 class="title is-2 has-text-white">10</h2>
+                    <h2 class="title is-2 has-text-white" id="totalQueriesCount">10</h2>
                     <p class="subtitle is-6 has-text-white-bis">Benchmark Queries</p>
                 </div>
             </div>
@@ -250,7 +239,7 @@
                     <span class="icon is-large mb-3">
                         <i class="mdi mdi-clock-outline mdi-48px"></i>
                     </span>
-                    <h2 class="title is-2 has-text-dark">31.31ms</h2>
+                    <h2 class="title is-2 has-text-dark" id="avgQueryTime">31.31ms</h2>
                     <p class="subtitle is-6 has-text-dark">Avg Query Time</p>
                 </div>
             </div>
@@ -259,7 +248,7 @@
                     <span class="icon is-large mb-3">
                         <i class="mdi mdi-calendar-clock mdi-48px"></i>
                     </span>
-                    <h3 class="title is-5 has-text-white">2025-09-03 09:03</h3>
+                    <h3 class="title is-5 has-text-white" id="lastUpdatedTime">2025-09-03 09:03</h3>
                     <p class="subtitle is-6 has-text-white-bis">Last Updated</p>
                 </div>
             </div>
@@ -309,7 +298,7 @@
                             <th class="has-text-centered">Status</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="performanceOverviewTable">
                         
                         <tr>
                             <td>
@@ -2549,7 +2538,7 @@
                             <th class="has-text-centered">Status</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="recentCommitsTable">
                         
                         <tr class="has-background-info-light">
                             <td>
@@ -2771,14 +2760,14 @@
             </div>
         </div>
 
-        <div class="generated-info">
+        <div class="generated-info" id="generatedInfo">
             <p>
                 <i class="mdi mdi-information-outline"></i>
-                Generated on 2025-09-03 09:03 | 
+                <span id="generatedInfoText">Generated on 2025-09-03 09:03 | 
                 10 commits analyzed | 
                 10 queries benchmarked |
                 1,000,000 rows dataset |
-                1,000 iterations per query
+                1,000 iterations per query</span>
             </p>
         </div>
     </div>
@@ -2796,12 +2785,40 @@
                 return;
             }
             
-            initCharts();
-            loadHistoryManifest();
+            // Set the embedded data as the default
+            window.metricsByQuery = metricsByQuery;
+            
+            // Try to load history manifest, but fallback to embedded data
+            loadHistoryManifest().then((success) => {
+                if (!success) {
+                    console.log('No historical files found, using embedded data');
+                    window.metricsByQuery = metricsByQuery;
+                    updateSummaryStats();
+                    updateMetricsTable();
+                    updatePerformanceOverview();
+                    updateRecentCommits();
+                    updateGeneratedInfo();
+                    initCharts();
+                }
+            }).catch(() => {
+                console.log('Failed to load history manifest, using embedded data');
+                window.metricsByQuery = metricsByQuery;
+                updateSummaryStats();
+                updateMetricsTable();
+                updatePerformanceOverview();
+                updateRecentCommits();
+                updateGeneratedInfo();
+                initCharts();
+            });
         });
         
         function initCharts() {
             
+            // Check if data is available
+            if (!window.metricsByQuery || window.metricsByQuery.length === 0) {
+                console.log('No metrics data available for charts');
+                return;
+            }
             
             const queryColors = [
                 '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
@@ -2810,7 +2827,7 @@
             
             
             const allCommits = [];
-            metricsByQuery.forEach(queryGroup => {
+            window.metricsByQuery.forEach(queryGroup => {
                 queryGroup.Metrics.forEach(metric => {
                     const shortCommit = metric.CommitHash.substring(0, 8);
                     if (!allCommits.includes(shortCommit)) {
@@ -2820,7 +2837,7 @@
             });
             
             
-            const avgDatasets = metricsByQuery.map((queryGroup, index) => {
+            const avgDatasets = window.metricsByQuery.map((queryGroup, index) => {
                 const data = allCommits.map(commit => {
                     const metric = queryGroup.Metrics.find(m => m.CommitHash.startsWith(commit));
                     return metric ? parseFloat(metric.Metric.avg_ms.toFixed(2)) : 0;
@@ -2838,7 +2855,7 @@
             
             const avgTotalData = allCommits.map(commit => {
                 let total = 0;
-                metricsByQuery.forEach(queryGroup => {
+                window.metricsByQuery.forEach(queryGroup => {
                     const metric = queryGroup.Metrics.find(m => m.CommitHash.startsWith(commit));
                     if (metric && metric.Metric && metric.Metric.avg_ms) {
                         total += metric.Metric.avg_ms;
@@ -2871,7 +2888,7 @@
             });
             
             
-            const p95Datasets = metricsByQuery.map((queryGroup, index) => {
+            const p95Datasets = window.metricsByQuery.map((queryGroup, index) => {
                 const data = allCommits.map(commit => {
                     const metric = queryGroup.Metrics.find(m => m.CommitHash.startsWith(commit));
                     return metric ? parseFloat(metric.Metric.p95_ms.toFixed(2)) : 0;
@@ -2889,7 +2906,7 @@
             
             const p95TotalData = allCommits.map(commit => {
                 let total = 0;
-                metricsByQuery.forEach(queryGroup => {
+                window.metricsByQuery.forEach(queryGroup => {
                     const metric = queryGroup.Metrics.find(m => m.CommitHash.startsWith(commit));
                     if (metric && metric.Metric && metric.Metric.p95_ms) {
                         total += metric.Metric.p95_ms;
@@ -3030,75 +3047,50 @@
                     return;
                 }
                 
-                // Clear existing options except the first one
-                while (select.options.length > 1) {
-                    select.remove(1);
+                // Clear all existing options
+                while (select.options.length > 0) {
+                    select.remove(0);
                 }
                 
-                // Generate potential benchmark filenames for the last 60 days
-                const potentialFiles = [];
-                const today = new Date();
+                // Fetch the directory listing - this is fast when using Python http.server
+                let foundFiles = [];
                 
-                // Check last 60 days
-                for (let daysAgo = 0; daysAgo < 60; daysAgo++) {
-                    const date = new Date(today);
-                    date.setDate(date.getDate() - daysAgo);
-                    const dateStr = date.toISOString().split('T')[0];
-                    
-                    // Common time patterns (adjust based on your actual run times)
-                    const commonTimes = [
-                        '000000', '010000', '020000', '030000', '040000', '050000',
-                        '060000', '070000', '080000', '090000', '100000', '110000',
-                        '113901', '120000', '125706', '130000', '140000', '150000',
-                        '160000', '170000', '180000', '190000', '200000', '210000',
-                        '220000', '230000', '235959'
-                    ];
-                    
-                    commonTimes.forEach(time => {
-                        potentialFiles.push(`benchmark_${dateStr}_${time}.html`);
-                    });
-                }
-                
-                // Check files in batches to avoid too many concurrent requests
-                const batchSize = 20;
-                const foundFiles = [];
-                
-                for (let i = 0; i < potentialFiles.length; i += batchSize) {
-                    const batch = potentialFiles.slice(i, i + batchSize);
-                    
-                    const batchPromises = batch.map(async (filename) => {
-                        try {
-                            const response = await fetch(filename, { method: 'HEAD' });
-                            if (response.ok) {
-                                console.log('Found benchmark file:', filename);
-                                
-                                // Extract date from filename
-                                const match = filename.match(/benchmark_(\d{4}-\d{2}-\d{2})_(\d{2})(\d{2})(\d{2})\.html/);
+                try {
+                    const response = await fetch('./');
+                    if (response.ok) {
+                        const text = await response.text();
+                        // Parse the directory listing HTML
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(text, 'text/html');
+                        const links = doc.querySelectorAll('a');
+                        
+                        links.forEach(link => {
+                            const href = link.getAttribute('href');
+                            // Find all benchmark HTML files
+                            if (href && href.startsWith('benchmark_') && href.endsWith('.html')) {
+                                const match = href.match(/benchmark_(\d{4}-\d{2}-\d{2})_(\d{2})(\d{2})(\d{2})\.html/);
                                 if (match) {
                                     const dateStr = match[1];
                                     const hour = match[2];
                                     const min = match[3];
+                                    const sec = match[4];
                                     
-                                    return {
-                                        filename: filename,
-                                        date: `${dateStr} ${hour}:${min}`,
-                                        sortKey: `${dateStr}_${hour}${min}`
-                                    };
+                                    foundFiles.push({
+                                        filename: href,
+                                        date: `${dateStr} ${hour}:${min}:${sec}`,
+                                        sortKey: `${dateStr}_${hour}${min}${sec}`
+                                    });
+                                    console.log('Found benchmark file:', href);
                                 }
                             }
-                        } catch (e) {
-                            // File doesn't exist, ignore
-                        }
-                        return null;
-                    });
-                    
-                    const results = await Promise.all(batchPromises);
-                    foundFiles.push(...results.filter(f => f !== null));
-                    
-                    // Stop if we've found enough files
-                    if (foundFiles.length >= 10) {
-                        break;
+                        });
+                        
+                        console.log('Total benchmark files found:', foundFiles.length);
+                    } else {
+                        console.error('Failed to fetch directory listing');
                     }
+                } catch (error) {
+                    console.error('Error fetching directory listing:', error);
                 }
                 
                 // Sort files by date (most recent first)
@@ -3135,27 +3127,145 @@
                 // Add found files to dropdown
                 if (filesWithMetadata.length > 0) {
                     console.log('Adding ' + filesWithMetadata.length + ' benchmark files to dropdown');
-                    filesWithMetadata.forEach(file => {
+                    filesWithMetadata.forEach((file, index) => {
                         const option = document.createElement('option');
                         option.value = file.filename;
                         option.textContent = `${file.date} (${file.commitCount} commits, ${file.queryCount} queries)`;
                         select.appendChild(option);
                         console.log('Added option:', option.textContent);
                     });
+                    
+                    // Automatically select and load the most recent file (first in the sorted list)
+                    if (filesWithMetadata.length > 0) {
+                        select.value = filesWithMetadata[0].filename;
+                        console.log('Auto-loading most recent file:', filesWithMetadata[0].filename);
+                        await loadHistoricalData(filesWithMetadata[0].filename);
+                        return true; // Successfully loaded historical data
+                    }
                 } else {
-                    console.log('No benchmark files found');
+                    console.log('No benchmark files found via directory listing, scanning for files dynamically');
+                    
+                    // Add an option for the current embedded data
+                    const currentOption = document.createElement('option');
+                    currentOption.value = 'current';
+                    currentOption.textContent = 'Current Data (Embedded)';
+                    currentOption.selected = true;
+                    select.appendChild(currentOption);
+                    
+                    // Quick scan for benchmark files - check specific patterns from recent days
+                    const foundFiles = [];
+                    const today = new Date();
+                    
+                    // Generate candidate filenames from last 14 days with focused time patterns
+                    const candidates = [];
+                    for (let daysAgo = 0; daysAgo < 14; daysAgo++) {
+                        const date = new Date(today);
+                        date.setDate(date.getDate() - daysAgo);
+                        const dateStr = date.toISOString().split('T')[0];
+                        
+                        // Focus on realistic benchmark times (hourly + some specific patterns we've seen)
+                        const specificTimes = [
+                            '102238', '113901', '125706', // Known patterns
+                            '090000', '100000', '110000', '120000', '130000', '140000', '150000', '160000', // Hourly
+                            '000000', '030000', '060000', '180000', '210000' // Other common times
+                        ];
+                        
+                        specificTimes.forEach(time => {
+                            candidates.push({
+                                filename: `benchmark_${dateStr}_${time}.html`,
+                                dateStr: dateStr,
+                                time: time
+                            });
+                        });
+                    }
+                    
+                    // Check candidates in small batches for better performance
+                    const batchSize = 10;
+                    for (let i = 0; i < candidates.length; i += batchSize) {
+                        const batch = candidates.slice(i, i + batchSize);
+                        
+                        const promises = batch.map(async (candidate) => {
+                            try {
+                                const response = await fetch(candidate.filename, { method: 'HEAD' });
+                                if (response.ok) {
+                                    const hour = candidate.time.substring(0, 2);
+                                    const min = candidate.time.substring(2, 4);
+                                    const sec = candidate.time.substring(4, 6);
+                                    console.log('Found file:', candidate.filename);
+                                    return {
+                                        filename: candidate.filename,
+                                        date: `${candidate.dateStr} ${hour}:${min}:${sec}`,
+                                        sortKey: `${candidate.dateStr}_${candidate.time}`
+                                    };
+                                }
+                            } catch (e) {
+                                // File doesn't exist
+                            }
+                            return null;
+                        });
+                        
+                        const results = await Promise.all(promises);
+                        foundFiles.push(...results.filter(f => f !== null));
+                        
+                        // Stop early if we found some files
+                        if (foundFiles.length >= 5) {
+                            break;
+                        }
+                    }
+                    
+                    // Sort and add found files
+                    foundFiles.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+                    foundFiles.forEach((file, index) => {
+                        const option = document.createElement('option');
+                        option.value = file.filename;
+                        option.textContent = file.date;
+                        select.appendChild(option);
+                    });
+                    
+                    // If we found files, auto-select and load the most recent one
+                    if (foundFiles.length > 0) {
+                        const mostRecent = foundFiles[0];
+                        select.value = mostRecent.filename;
+                        // Set current data as not selected
+                        currentOption.selected = false;
+                        console.log('Auto-loading most recent found file:', mostRecent.filename);
+                        await loadHistoricalData(mostRecent.filename);
+                        return true; // Successfully loaded historical data
+                    }
+                    
+                    return false; // Using fallback, not historical data
                 }
                 
             } catch (error) {
                 console.error('Failed to discover benchmark files:', error);
+                
+                // Even if everything fails, add current data option
+                const currentOption = document.createElement('option');
+                currentOption.value = 'current';
+                currentOption.textContent = 'Current Data (Embedded)';
+                currentOption.selected = true;
+                select.appendChild(currentOption);
+                
+                return false; // Failed to load
             }
         }
         
         
         async function loadHistoricalData(filename) {
+            if (!filename) {
+                return;
+            }
+            
             if (filename === 'current') {
-                
-                window.location.reload();
+                // Load the embedded data
+                console.log('Loading current embedded data');
+                window.metricsByQuery = metricsByQuery;
+                updateSummaryStats();
+                updateMetricsTable();
+                updatePerformanceOverview();
+                updateRecentCommits();
+                updateGeneratedInfo();
+                initializeCharts();
                 return;
             }
             
@@ -3206,19 +3316,20 @@
                         window.summaryStats = evalInContext(summaryMatch[1]);
                     }
                     
-                    // Parse the DOM to get the container structure
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(htmlText, 'text/html');
+                    // Update the summary statistics in the UI
+                    updateSummaryStats();
                     
-                    const newContainer = doc.querySelector('.main-container');
-                    const currentContainer = document.querySelector('.main-container');
+                    // Update the metrics table
+                    updateMetricsTable();
                     
-                    if (newContainer && currentContainer) {
-                        // Update the container HTML
-                        currentContainer.innerHTML = newContainer.innerHTML;
+                    // Update the performance overview table
+                    updatePerformanceOverview();
                     
+                    // Update recent commits table
+                    updateRecentCommits();
                     
-                    }
+                    // Update generated info
+                    updateGeneratedInfo();
                     
                     // Destroy existing charts before reinitializing
                     if (window.Chart) {
@@ -3232,9 +3343,7 @@
                     }
                     
                     // Re-initialize charts with the historical data
-                    if (typeof initCharts === 'function') {
-                        initCharts();
-                    }
+                    initCharts();
                     
                     // Re-bind the filter functionality
                     if (typeof filterMetricsTable === 'function') {
@@ -3244,14 +3353,8 @@
                     // Preserve the dropdown selection
                     const historySelect = document.getElementById('historySelect');
                     if (historySelect) {
-                        // Re-populate the dropdown (it was replaced with the HTML update)
-                        loadHistoryManifest().then(() => {
-                            // Set the current selection after dropdown is repopulated
-                            const newHistorySelect = document.getElementById('historySelect');
-                            if (newHistorySelect) {
-                                newHistorySelect.value = filename;
-                            }
-                        });
+                        // Simply set the current selection value
+                        historySelect.value = filename;
                     }
                 } catch (parseError) {
                     console.error('Failed to parse historical data:', parseError);
@@ -3269,12 +3372,298 @@
         }
         
         
+        function updateSummaryStats() {
+            if (!window.metricsByQuery) return;
+            
+            // Count unique commits
+            const uniqueCommits = new Set();
+            let totalAvgTime = 0;
+            let totalMetrics = 0;
+            
+            window.metricsByQuery.forEach(query => {
+                query.Metrics.forEach(metric => {
+                    uniqueCommits.add(metric.CommitHash);
+                    totalAvgTime += metric.Metric.avg_ms;
+                    totalMetrics++;
+                });
+            });
+            
+            // Update Total Commits
+            const commitsEl = document.getElementById('totalCommitsCount');
+            if (commitsEl) {
+                commitsEl.textContent = uniqueCommits.size;
+            }
+            
+            // Update Benchmark Queries
+            const queriesEl = document.getElementById('totalQueriesCount');
+            if (queriesEl) {
+                queriesEl.textContent = window.metricsByQuery.length;
+            }
+            
+            // Update Average Query Time (average across all queries and commits)
+            const avgTimeEl = document.getElementById('avgQueryTime');
+            if (avgTimeEl && totalMetrics > 0) {
+                const avgTime = totalAvgTime / totalMetrics;
+                avgTimeEl.textContent = avgTime.toFixed(2) + 'ms';
+            }
+            
+            // Update Last Updated timestamp
+            const timestampEl = document.getElementById('lastUpdatedTime');
+            if (timestampEl) {
+                if (window.benchmarkTimestamp) {
+                    timestampEl.textContent = window.benchmarkTimestamp;
+                } else if (window.metricsByQuery.length > 0) {
+                    // Try to get the most recent timestamp from the data
+                    let mostRecentTime = null;
+                    window.metricsByQuery.forEach(query => {
+                        query.Metrics.forEach(metric => {
+                            const timestamp = metric.CommitTimestamp || metric.Timestamp;
+                            if (timestamp && (!mostRecentTime || new Date(timestamp) > new Date(mostRecentTime))) {
+                                mostRecentTime = timestamp;
+                            }
+                        });
+                    });
+                    if (mostRecentTime) {
+                        const date = new Date(mostRecentTime);
+                        timestampEl.textContent = date.toISOString().replace('T', ' ').slice(0, 16);
+                    }
+                }
+            }
+        }
+        
+        function updatePerformanceOverview() {
+            const tableBody = document.getElementById('performanceOverviewTable');
+            if (!tableBody || !window.metricsByQuery) {
+                return;
+            }
+            
+            // Clear existing rows
+            tableBody.innerHTML = '';
+            
+            // Process each query group to calculate changes
+            window.metricsByQuery.forEach(queryGroup => {
+                if (queryGroup.Metrics.length >= 2) {
+                    // Get the two most recent commits
+                    const latest = queryGroup.Metrics[queryGroup.Metrics.length - 1];
+                    const previous = queryGroup.Metrics[queryGroup.Metrics.length - 2];
+                    
+                    const prevValue = previous.Metric.avg_ms;
+                    const latestValue = latest.Metric.avg_ms;
+                    const change = ((latestValue - prevValue) / prevValue) * 100;
+                    
+                    const row = document.createElement('tr');
+                    
+                    // Determine status
+                    let changeClass, statusClass, statusText;
+                    if (change < -1) {
+                        changeClass = 'has-text-success';
+                        statusClass = 'is-success';
+                        statusText = 'Improved';
+                    } else if (change > 1) {
+                        changeClass = 'has-text-danger';
+                        statusClass = 'is-danger';
+                        statusText = 'Degraded';
+                    } else {
+                        changeClass = 'has-text-grey';
+                        statusClass = 'is-light';
+                        statusText = 'Stable';
+                    }
+                    
+                    row.innerHTML = `
+                        <td>
+                            <strong>${queryGroup.QueryName}</strong><br>
+                            <small class="has-text-grey">${queryGroup.QueryID}</small>
+                        </td>
+                        <td class="has-text-centered">${prevValue.toFixed(2)}ms</td>
+                        <td class="has-text-centered">
+                            <strong>${latestValue.toFixed(2)}ms</strong>
+                        </td>
+                        <td class="has-text-centered">
+                            <span class="${changeClass}">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</span>
+                        </td>
+                        <td class="has-text-centered">
+                            <span class="tag ${statusClass}">${statusText}</span>
+                        </td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                }
+            });
+        }
+        
+        function updateRecentCommits() {
+            const tableBody = document.getElementById('recentCommitsTable');
+            if (!tableBody || !window.metricsByQuery) {
+                return;
+            }
+            
+            // Clear existing rows
+            tableBody.innerHTML = '';
+            
+            // Collect all unique commits with their data
+            const commitMap = new Map();
+            
+            window.metricsByQuery.forEach(queryGroup => {
+                queryGroup.Metrics.forEach(metric => {
+                    const hash = metric.CommitHash;
+                    if (!commitMap.has(hash)) {
+                        commitMap.set(hash, {
+                            hash: hash,
+                            shortHash: hash.substring(0, 8),
+                            timestamp: metric.CommitTimestamp || metric.Timestamp,
+                            metrics: [],
+                            isLatest: false
+                        });
+                    }
+                    commitMap.get(hash).metrics.push(metric.Metric.avg_ms);
+                });
+            });
+            
+            // Convert to array and sort by timestamp
+            const commits = Array.from(commitMap.values());
+            commits.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            // Mark the latest commit
+            if (commits.length > 0) {
+                commits[0].isLatest = true;
+            }
+            
+            // Create rows for each commit
+            commits.forEach((commit, index) => {
+                const avgPerformance = commit.metrics.reduce((a, b) => a + b, 0) / commit.metrics.length;
+                
+                // Determine status based on position
+                let statusClass = 'is-light';
+                let statusText = 'Normal';
+                if (index === 0) {
+                    statusClass = 'is-info';
+                    statusText = 'Latest';
+                } else if (index < 3) {
+                    statusClass = 'is-success';
+                    statusText = 'Recent';
+                }
+                
+                const row = document.createElement('tr');
+                if (commit.isLatest) {
+                    row.className = 'has-background-info-light';
+                }
+                
+                row.innerHTML = `
+                    <td>
+                        <code class="${commit.isLatest ? 'has-text-primary' : ''}">${commit.shortHash}</code>
+                        ${commit.isLatest ? `
+                        <span class="tag is-info is-light ml-2">
+                            <span class="icon"><i class="mdi mdi-star"></i></span>
+                            <span>Latest</span>
+                        </span>` : ''}
+                    </td>
+                    <td>${new Date(commit.timestamp).toLocaleString()}</td>
+                    <td class="has-text-centered">
+                        <strong>${avgPerformance.toFixed(2)}ms</strong>
+                    </td>
+                    <td class="has-text-centered">
+                        <span class="tag ${statusClass}">${statusText}</span>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+        
+        function updateGeneratedInfo() {
+            const infoEl = document.getElementById('generatedInfoText');
+            if (!infoEl) return;
+            
+            let infoText = '';
+            
+            // Add timestamp
+            if (window.benchmarkTimestamp) {
+                infoText += `Generated on ${window.benchmarkTimestamp} | `;
+            }
+            
+            // Count commits and queries
+            if (window.metricsByQuery) {
+                const uniqueCommits = new Set();
+                window.metricsByQuery.forEach(query => {
+                    query.Metrics.forEach(metric => {
+                        uniqueCommits.add(metric.CommitHash);
+                    });
+                });
+                
+                infoText += `${uniqueCommits.size} commits analyzed | `;
+                infoText += `${window.metricsByQuery.length} queries benchmarked | `;
+            }
+            
+            // Add configuration info if available
+            if (window.benchmarkConfig) {
+                if (window.benchmarkConfig.rows) {
+                    infoText += `${window.benchmarkConfig.rows.toLocaleString()} rows dataset | `;
+                }
+                if (window.benchmarkConfig.iterations) {
+                    infoText += `${window.benchmarkConfig.iterations.toLocaleString()} iterations per query`;
+                }
+            }
+            
+            infoEl.textContent = infoText;
+        }
+        
+        
+        function updateMetricsTable() {
+            // Find the metrics table body
+            const tableBody = document.querySelector('#metricsTable tbody');
+            if (!tableBody || !window.metricsByQuery) {
+                return;
+            }
+            
+            // Clear existing rows
+            tableBody.innerHTML = '';
+            
+            // Rebuild the table with the new data
+            window.metricsByQuery.forEach((queryGroup, queryIndex) => {
+                queryGroup.Metrics.forEach((metric, metricIndex) => {
+                    const row = document.createElement('tr');
+                    row.className = 'metric-row';
+                    row.setAttribute('data-query-id', queryGroup.QueryID);
+                    
+                    row.innerHTML = `
+                        <td>
+                            <span class="query-badge" style="background-color: ${getQueryColor(queryIndex)}">
+                                ${queryGroup.QueryName || queryGroup.QueryID}
+                            </span>
+                        </td>
+                        <td class="commit-cell">
+                            <code>${metric.CommitHash.substring(0, 8)}</code>
+                        </td>
+                        <td class="number-cell">${metric.Metric.avg_ms.toFixed(2)}</td>
+                        <td class="number-cell">${metric.Metric.p50_ms.toFixed(2)}</td>
+                        <td class="number-cell">${metric.Metric.p95_ms.toFixed(2)}</td>
+                        <td class="number-cell">${metric.Metric.p99_ms.toFixed(2)}</td>
+                        <td class="number-cell">${metric.Metric.min_ms.toFixed(2)}</td>
+                        <td class="number-cell">${metric.Metric.max_ms.toFixed(2)}</td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+            });
+            
+            // Re-apply the filter
+            filterMetricsTable();
+        }
+        
+        function getQueryColor(index) {
+            const queryColors = [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+                '#FF9F40', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'
+            ];
+            return queryColors[index % queryColors.length];
+        }
+        
         function initializeCharts() {
             if (typeof Chart === 'undefined' || !window.metricsByQuery) {
                 return;
             }
             
-            
+            // Destroy existing charts
             const avgCanvas = document.getElementById('avgLatencyChart');
             const p95Canvas = document.getElementById('p95LatencyChart');
             if (avgCanvas) {
@@ -3286,14 +3675,8 @@
                 if (existingChart) existingChart.destroy();
             }
             
-            
-            
-            
-            
-            
-            
-            
-            window.location.reload();
+            // Re-initialize charts with current data
+            initCharts();
         }
         
         
